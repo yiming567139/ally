@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>油迹 YouJi · 前端原型 v0.1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600&family=Chakra+Petch:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================
+   油迹 YouJi · 设计原型样式
+   风格：深色「夜骑仪表盘」 Charcoal + 琥珀背光
+   tokens 与 design-system/MASTER.md 对齐
+   ============================================ */
+
+:root {
+  /* surface 层级 */
+  --surface:            #0B0F16;   /* 比设计稿 #111827 更深一档，原型氛围 */
+  --surface-app:        #111827;
+  --surface-container:  #1F2937;
+  --surface-high:       #2A3546;
+  --surface-glass:      rgba(31, 41, 55, .72);
+
+  /* 文字 */
+  --on-surface:         #F9FAFB;
+  --on-surface-2:       #D1D5DB;
+  --on-surface-3:       #9CA3AF;
+  --outline:            rgba(148, 163, 184, .14);
+  --outline-strong:     rgba(148, 163, 184, .28);
+
+  /* 强调：琥珀 */
+  --primary:            #F59E0B;
+  --primary-soft:       rgba(245, 158, 11, .14);
+  --primary-line:       rgba(245, 158, 11, .38);
+  --on-primary:         #1A1207;
+
+  --success:            #34D399;
+  --success-soft:       rgba(52, 211, 153, .12);
+  --error:              #F87171;
+  --error-soft:         rgba(248, 113, 113, .12);
+
+  /* 字体 */
+  --font-display: 'Unbounded', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-body: 'Chakra Petch', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+
+  /* 形状 */
+  --r-card: 20px;
+  --r-ctl: 12px;
+  --r-chip: 999px;
+
+  /* 动效 */
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+  --spring: cubic-bezier(.34, 1.56, .64, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html { font-size: 16px; }
+
+body {
+  font-family: var(--font-body);
+  background: #07090D;
+  color: var(--on-surface);
+  min-height: 100vh;
+  /* 车库夜景：远处琥珀光晕 + 冷色补光 + 噪点 */
+  background-image:
+    radial-gradient(900px 500px at 12% -6%, rgba(245, 158, 11, .10), transparent 60%),
+    radial-gradient(800px 600px at 88% 108%, rgba(56, 89, 199, .10), transparent 55%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.035'/%3E%3C/svg%3E");
+  padding: 48px 32px 96px;
+}
+
+.num { font-feature-settings: 'tnum' 1; font-variant-numeric: tabular-nums; }
+
+/* ---------- 展示板头 ---------- */
+.board-head { max-width: 1560px; margin: 0 auto 40px; display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+.board-title { display: flex; align-items: baseline; gap: 16px; }
+.board-title h1 {
+  font-family: var(--font-display);
+  font-size: 34px; font-weight: 600; letter-spacing: .02em;
+  background: linear-gradient(120deg, #FDE68A, #F59E0B 55%, #B45309);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.board-title .ver {
+  font-size: 12px; color: var(--on-surface-3); letter-spacing: .18em;
+  border: 1px solid var(--outline-strong); border-radius: var(--r-chip); padding: 4px 12px;
+}
+.board-note { color: var(--on-surface-3); font-size: 13px; line-height: 1.7; max-width: 520px; }
+.board-note b { color: var(--primary); font-weight: 500; }
+
+/* ---------- 手机阵列 ---------- */
+.board { max-width: 1560px; margin: 0 auto; display: flex; gap: 36px; flex-wrap: wrap; justify-content: center; }
+
+.device { display: flex; flex-direction: column; gap: 14px; }
+.device-label { display: flex; align-items: center; gap: 10px; padding-left: 6px; }
+.device-label .idx {
+  font-family: var(--font-display); font-size: 12px; color: var(--primary);
+  width: 26px; height: 26px; border: 1px solid var(--primary-line); border-radius: 8px;
+  display: grid; place-items: center;
+}
+.device-label .name { font-size: 14px; color: var(--on-surface-2); letter-spacing: .06em; }
+.device-label .en { font-size: 11px; color: var(--on-surface-3); letter-spacing: .22em; }
+
+.phone {
+  width: 375px; height: 780px; border-radius: 44px; position: relative; overflow: hidden;
+  background: var(--surface);
+  border: 1px solid rgba(148, 163, 184, .18);
+  box-shadow:
+    0 0 0 10px #0D1117,
+    0 0 0 11px rgba(148, 163, 184, .22),
+    0 40px 80px -24px rgba(0, 0, 0, .8),
+    0 0 120px -40px rgba(245, 158, 11, .18);
+}
+/* 听筒/状态栏 */
+.statusbar {
+  height: 40px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 26px; font-size: 12.5px; color: var(--on-surface-2); flex: none;
+}
+.statusbar .sig { display: flex; gap: 6px; align-items: center; opacity: .85; font-size: 11px; }
+
+.screen { height: 100%; display: flex; flex-direction: column; position: relative; }
+.screen-scroll { flex: 1; overflow: hidden auto; padding: 4px 18px 120px; scrollbar-width: none; }
+.screen-scroll::-webkit-scrollbar { display: none; }
+
+/* ---------- 通用组件 ---------- */
+.card {
+  background: linear-gradient(160deg, var(--surface-container), #1B2431);
+  border: 1px solid var(--outline);
+  border-radius: var(--r-card);
+  padding: 18px;
+  position: relative;
+}
+
+.label-caps {
+  font-size: 10.5px; letter-spacing: .24em; color: var(--on-surface-3);
+  text-transform: uppercase; font-weight: 500;
+}
+
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--surface-high); border: 1px solid var(--outline);
+  border-radius: var(--r-chip); padding: 6px 12px; font-size: 12.5px; color: var(--on-surface-2);
+}
+
+.btn-primary {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  background: linear-gradient(135deg, #FBBF24, #F59E0B 60%, #D97706);
+  color: var(--on-primary); border: none; border-radius: 16px;
+  font-family: var(--font-body); font-size: 16px; font-weight: 600; letter-spacing: .04em;
+  padding: 16px; width: 100%; cursor: pointer;
+  box-shadow: 0 10px 28px -8px rgba(245, 158, 11, .45), inset 0 1px 0 rgba(255, 255, 255, .35);
+  transition: transform .18s var(--spring), box-shadow .2s;
+}
+.btn-primary:active { transform: scale(.97); }
+
+.btn-ghost {
+  background: var(--surface-high); color: var(--on-surface-2);
+  border: 1px solid var(--outline); border-radius: 16px;
+  padding: 15px; width: 100%; font-size: 15px; font-family: var(--font-body); cursor: pointer;
+}
+
+/* ---------- 底部导航 ---------- */
+.tabbar {
+  position: absolute; left: 14px; right: 14px; bottom: 14px; z-index: 30;
+  display: flex; align-items: center; justify-content: space-around;
+  background: var(--surface-glass); backdrop-filter: blur(18px);
+  border: 1px solid var(--outline); border-radius: 24px; padding: 10px 6px;
+}
+.tab { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; color: var(--on-surface-3); width: 56px; }
+.tab svg { width: 21px; height: 21px; }
+.tab.on { color: var(--primary); }
+.tab.on .dot { opacity: 1; }
+.tab .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--primary); opacity: 0; }
+.tab-fab {
+  width: 54px; height: 54px; border-radius: 18px; margin-top: -30px;
+  background: linear-gradient(135deg, #FBBF24, #D97706);
+  display: grid; place-items: center; color: var(--on-primary);
+  box-shadow: 0 12px 26px -6px rgba(245, 158, 11, .55), inset 0 1px 0 rgba(255, 255, 255, .4);
+  border: 1px solid rgba(255, 255, 255, .25);
+}
+.tab-fab svg { width: 26px; height: 26px; }
+
+/* ============================================
+   P1 首页 Dashboard
+   ============================================ */
+.dash-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 4px 18px; }
+.vehicle-chip { display: flex; align-items: center; gap: 10px; }
+.vehicle-chip .avatar {
+  width: 40px; height: 40px; border-radius: 13px;
+  background: linear-gradient(140deg, #374151, #1F2937);
+  border: 1px solid var(--outline-strong);
+  display: grid; place-items: center; font-family: var(--font-display); font-size: 15px; color: var(--primary);
+}
+.vehicle-chip .vname { font-size: 15px; font-weight: 600; }
+.vehicle-chip .vsub { font-size: 11px; color: var(--on-surface-3); margin-top: 1px; }
+.icon-btn {
+  width: 40px; height: 40px; border-radius: 13px; display: grid; place-items: center;
+  background: var(--surface-container); border: 1px solid var(--outline); color: var(--on-surface-2);
+}
+
+.hero { text-align: center; padding: 8px 0 22px; position: relative; }
+.hero .label-caps { display: block; margin-bottom: 10px; }
+.hero-value {
+  font-family: var(--font-display); font-size: 62px; font-weight: 500; line-height: 1;
+  color: var(--on-surface);
+  text-shadow: 0 0 42px rgba(245, 158, 11, .35);
+  font-feature-settings: 'tnum' 1;
+}
+.hero-unit { font-size: 15px; color: var(--on-surface-3); margin-top: 10px; letter-spacing: .1em; }
+.hero-sub {
+  display: inline-flex; align-items: center; gap: 8px; margin-top: 14px;
+  background: var(--success-soft); color: var(--success);
+  border: 1px solid rgba(52, 211, 153, .25);
+  border-radius: var(--r-chip); padding: 5px 12px; font-size: 12px;
+}
+/* 仪表弧线装饰 */
+.hero-arc { position: absolute; left: 50%; top: 6px; transform: translateX(-50%); width: 240px; height: 120px; pointer-events: none; opacity: .9; }
+
+.tank-card { margin-bottom: 14px; overflow: hidden; }
+.tank-card::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(240px 120px at 88% -10%, rgba(245, 158, 11, .16), transparent 70%);
+  pointer-events: none;
+}
+.tank-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+.tank-top .t { font-size: 14px; font-weight: 600; }
+.tank-top .d { font-size: 12px; color: var(--on-surface-3); }
+.gauge { position: relative; height: 10px; border-radius: 6px; background: #0E1520; border: 1px solid var(--outline); overflow: hidden; margin: 6px 0 14px; }
+.gauge i {
+  position: absolute; inset: 0; width: 62%; border-radius: 6px;
+  background: linear-gradient(90deg, #B45309, #F59E0B 70%, #FCD34D);
+  box-shadow: 0 0 14px rgba(245, 158, 11, .5);
+}
+.gauge-ticks { display: flex; justify-content: space-between; font-size: 10px; color: var(--on-surface-3); margin-bottom: 12px; }
+.tank-stats { display: flex; gap: 10px; }
+.tank-stat { flex: 1; background: rgba(11, 15, 22, .55); border: 1px solid var(--outline); border-radius: 14px; padding: 10px 12px; }
+.tank-stat .k { font-size: 10.5px; color: var(--on-surface-3); margin-bottom: 4px; letter-spacing: .08em; }
+.tank-stat .v { font-size: 16px; font-weight: 600; font-family: var(--font-display); font-weight: 500; }
+.tank-stat .v small { font-size: 10px; color: var(--on-surface-3); font-family: var(--font-body); margin-left: 2px; }
+.tank-stat .v.amber { color: var(--primary); }
+
+.month-row { display: flex; gap: 12px; margin-bottom: 14px; }
+.month-card { flex: 1; }
+.month-card .k { font-size: 11px; color: var(--on-surface-3); display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.month-card .v { font-family: var(--font-display); font-size: 21px; font-weight: 500; }
+.month-card .v small { font-size: 11px; color: var(--on-surface-3); font-family: var(--font-body); }
+.month-card .trend { font-size: 11px; margin-top: 6px; color: var(--success); }
+.month-card .trend.up { color: var(--error); }
+
+.dash-cta { margin-top: 4px; }
+
+.last-fill { margin-top: 14px; display: flex; align-items: center; gap: 12px; padding: 13px 16px; }
+.last-fill .pump {
+  width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center;
+  background: var(--primary-soft); color: var(--primary); border: 1px solid var(--primary-line);
+}
+.last-fill .info { flex: 1; }
+.last-fill .info .l1 { font-size: 13.5px; font-weight: 500; }
+.last-fill .info .l2 { font-size: 11.5px; color: var(--on-surface-3); margin-top: 2px; }
+.last-fill .amt { text-align: right; }
+.last-fill .amt .a { font-family: var(--font-display); font-size: 15px; }
+.last-fill .amt .b { font-size: 11px; color: var(--on-surface-3); }
+
+/* ============================================
+   P2 记一笔 Bottom Sheet
+   ============================================ */
+.sheet-scrim { position: absolute; inset: 0; background: rgba(4, 6, 10, .62); backdrop-filter: blur(3px); z-index: 40; }
+.sheet {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 41;
+  background: linear-gradient(180deg, #232E3E, #18202C);
+  border: 1px solid var(--outline-strong); border-bottom: none;
+  border-radius: 28px 28px 0 0; padding: 12px 20px 26px;
+  box-shadow: 0 -20px 60px rgba(0, 0, 0, .5);
+}
+.sheet-grip { width: 40px; height: 4px; border-radius: 4px; background: var(--outline-strong); margin: 0 auto 16px; }
+.sheet-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.sheet-title h3 { font-size: 17px; font-weight: 600; letter-spacing: .02em; }
+.sheet-title .date-pill { font-size: 12px; color: var(--on-surface-2); background: var(--surface-high); border: 1px solid var(--outline); padding: 5px 11px; border-radius: var(--r-chip); }
+
+.amount-display { text-align: center; margin: 4px 0 16px; }
+.amount-display .cur { font-size: 18px; color: var(--on-surface-3); vertical-align: 14px; margin-right: 4px; }
+.amount-display .val { font-family: var(--font-display); font-size: 46px; font-weight: 500; }
+.amount-display .conv { font-size: 12.5px; color: var(--on-surface-3); margin-top: 6px; }
+.amount-display .conv b { color: var(--primary); font-weight: 500; }
+
+.mode-seg { display: flex; background: rgba(11, 15, 22, .6); border: 1px solid var(--outline); border-radius: 12px; padding: 3px; margin-bottom: 16px; }
+.mode-seg span { flex: 1; text-align: center; font-size: 12.5px; padding: 8px; border-radius: 9px; color: var(--on-surface-3); }
+.mode-seg span.on { background: var(--surface-high); color: var(--on-surface); font-weight: 500; box-shadow: inset 0 0 0 1px var(--outline-strong); }
+
+.fill-row { display: flex; gap: 10px; margin-bottom: 12px; }
+.fill-field {
+  flex: 1; background: rgba(11, 15, 22, .55); border: 1px solid var(--outline);
+  border-radius: var(--r-ctl); padding: 10px 13px;
+}
+.fill-field .k { font-size: 10.5px; color: var(--on-surface-3); letter-spacing: .1em; margin-bottom: 4px; }
+.fill-field .v { font-size: 16.5px; font-weight: 600; font-family: var(--font-display); font-weight: 500; }
+.fill-field .v small { font-family: var(--font-body); font-size: 11px; color: var(--on-surface-3); font-weight: 400; }
+
+.full-toggle {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--primary-soft); border: 1px solid var(--primary-line);
+  border-radius: 14px; padding: 12px 14px; margin-bottom: 14px;
+}
+.full-toggle .l { display: flex; align-items: center; gap: 10px; }
+.full-toggle .l .ic { width: 34px; height: 34px; border-radius: 10px; background: rgba(245, 158, 11, .18); display: grid; place-items: center; color: var(--primary); }
+.full-toggle .l .t1 { font-size: 14px; font-weight: 600; }
+.full-toggle .l .t2 { font-size: 11px; color: var(--on-surface-3); margin-top: 1px; }
+.switch { width: 48px; height: 28px; border-radius: 999px; background: var(--primary); position: relative; box-shadow: inset 0 1px 3px rgba(0,0,0,.25); }
+.switch::after { content: ''; position: absolute; right: 3px; top: 3px; width: 22px; height: 22px; border-radius: 50%; background: #FFF7E6; box-shadow: 0 2px 6px rgba(0,0,0,.35); }
+
+.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+.key {
+  height: 52px; border-radius: 14px; display: grid; place-items: center;
+  background: rgba(31, 41, 55, .65); border: 1px solid var(--outline);
+  font-family: var(--font-display); font-size: 19px; color: var(--on-surface);
+}
+.key.fn { font-family: var(--font-body); font-size: 15px; color: var(--on-surface-2); }
+
+/* ============================================
+   P3 历史记录
+   ============================================ */
+.hist-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 4px 16px; }
+.hist-head h2 { font-size: 20px; font-weight: 600; }
+.hist-summary { display: flex; gap: 10px; margin-bottom: 18px; }
+.hist-summary .hs { flex: 1; text-align: center; padding: 12px 8px; }
+.hist-summary .hs .v { font-family: var(--font-display); font-size: 17px; }
+.hist-summary .hs .k { font-size: 10.5px; color: var(--on-surface-3); margin-top: 4px; letter-spacing: .06em; }
+
+.month-group { margin-bottom: 8px; }
+.month-tag { display: flex; align-items: center; gap: 10px; margin: 14px 2px 10px; font-size: 12px; color: var(--on-surface-3); letter-spacing: .1em; }
+.month-tag::after { content: ''; flex: 1; height: 1px; background: var(--outline); }
+.month-tag b { color: var(--on-surface-2); font-weight: 600; }
+
+.fill-item { display: flex; align-items: center; gap: 13px; padding: 14px 16px; margin-bottom: 10px; }
+.fill-item .day {
+  width: 44px; text-align: center; flex: none;
+}
+.fill-item .day .d { font-family: var(--font-display); font-size: 19px; font-weight: 500; }
+.fill-item .day .m { font-size: 10px; color: var(--on-surface-3); margin-top: 2px; }
+.fill-item .mid { flex: 1; min-width: 0; }
+.fill-item .mid .station { font-size: 13.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fill-item .mid .meta { font-size: 11.5px; color: var(--on-surface-3); margin-top: 3px; }
+.fill-item .right { text-align: right; flex: none; }
+.fill-item .right .eco { font-family: var(--font-display); font-size: 15px; color: var(--success); }
+.fill-item .right .eco small { font-size: 9.5px; color: var(--on-surface-3); font-family: var(--font-body); }
+.fill-item .right .amt { font-size: 11.5px; color: var(--on-surface-3); margin-top: 3px; }
+
+.fill-item.partial { opacity: .62; border-style: dashed; }
+.fill-item.partial .eco { color: var(--on-surface-3); }
+.badge-partial {
+  display: inline-block; font-size: 9.5px; letter-spacing: .12em; color: var(--primary);
+  border: 1px solid var(--primary-line); border-radius: 5px; padding: 1.5px 6px; margin-left: 6px;
+  vertical-align: 1.5px;
+}
+.badge-anchor { color: var(--success); border-color: rgba(52,211,153,.3); }
+
+/* ============================================
+   P4 统计
+   ============================================ */
+.stats-head { padding: 10px 4px 16px; display: flex; align-items: center; justify-content: space-between; }
+.stats-head h2 { font-size: 20px; font-weight: 600; }
+.range-seg { display: flex; background: var(--surface-container); border: 1px solid var(--outline); border-radius: 10px; padding: 2px; }
+.range-seg span { font-size: 11px; padding: 5px 10px; border-radius: 8px; color: var(--on-surface-3); }
+.range-seg span.on { background: var(--surface-high); color: var(--on-surface); box-shadow: inset 0 0 0 1px var(--outline-strong); }
+
+.chart-card { margin-bottom: 14px; }
+.chart-card .ct-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.chart-card .ct-head .t { font-size: 14px; font-weight: 600; }
+.chart-card .ct-head .s { font-size: 11px; color: var(--on-surface-3); }
+.chart-wrap { padding: 8px 0 2px; }
+.chart-legend { display: flex; gap: 16px; font-size: 10.5px; color: var(--on-surface-3); margin-top: 6px; }
+.chart-legend i { display: inline-block; width: 14px; height: 2px; border-radius: 2px; margin-right: 5px; vertical-align: 3px; }
+
+.bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-size: 12px; }
+.bar-row .bl { width: 92px; flex: none; color: var(--on-surface-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bar-row .track { flex: 1; height: 8px; border-radius: 5px; background: #0E1520; border: 1px solid var(--outline); overflow: hidden; }
+.bar-row .track i { display: block; height: 100%; border-radius: 5px; background: linear-gradient(90deg, #92400E, #F59E0B); }
+.bar-row.green .track i { background: linear-gradient(90deg, #065F46, #34D399); }
+.bar-row .bv { width: 58px; text-align: right; font-family: var(--font-display); font-size: 12px; color: var(--on-surface-2); }
+
+/* 页面载入编排 */
+.device { animation: rise .7s var(--ease-out) backwards; }
+.device:nth-child(2) { animation-delay: .08s; }
+.device:nth-child(3) { animation-delay: .16s; }
+.device:nth-child(4) { animation-delay: .24s; }
+@keyframes rise { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) { .device { animation: none; } }
+
+@media (max-width: 720px) {
+  body { padding: 28px 12px 72px; }
+  .board { gap: 28px; }
+  .board-title h1 { font-size: 26px; }
+}
+
+</style>
+</head>
+<body>
+
+<header class="board-head">
+  <div class="board-title">
+    <h1>油迹 YouJi</h1>
+    <span class="ver">PROTOTYPE v0.1</span>
+  </div>
+  <p class="board-note">
+    摩托车油耗记录 App · 深色「夜骑仪表盘」风格 · Charcoal + 琥珀背光。<br>
+    油耗口径为<b>满箱法</b>：仅「加满 → 加满」区间出区间油耗，未加满记录标 PARTIAL 不计边界。
+    数字为演示数据；最终实现为 Flutter，此原型用于确认信息架构与视觉方向。
+  </p>
+</header>
+
+<main class="board">
+
+  <!-- ============ P1 首页 ============ -->
+  <div class="device">
+    <div class="device-label"><span class="idx">P1</span><span class="name">首页 · 概览</span><span class="en">DASHBOARD</span></div>
+    <section class="phone">
+      <div class="screen">
+        <div class="statusbar"><span class="num">21:24</span><span class="sig">▲●● ▫ 5G 87%</span></div>
+        <div class="screen-scroll">
+
+          <div class="dash-head">
+            <div class="vehicle-chip">
+              <div class="avatar">CF</div>
+              <div>
+                <div class="vname">春风 450SR</div>
+                <div class="vsub">450cc · 95# · 油箱 14L</div>
+              </div>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
+            </div>
+            <button class="icon-btn" aria-label="设置">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </button>
+          </div>
+
+          <div class="hero">
+            <svg class="hero-arc" viewBox="0 0 240 120" fill="none">
+              <path d="M 20 110 A 100 100 0 0 1 220 110" stroke="rgba(148,163,184,.14)" stroke-width="2" stroke-linecap="round"/>
+              <path d="M 20 110 A 100 100 0 0 1 148 15.5" stroke="url(#ga)" stroke-width="3" stroke-linecap="round"/>
+              <defs><linearGradient id="ga" x1="0" y1="1" x2="1" y2="0"><stop stop-color="#B45309"/><stop offset="1" stop-color="#FCD34D"/></linearGradient></defs>
+            </svg>
+            <span class="label-caps">当前平均油耗 / AVG CONSUMPTION</span>
+            <div class="hero-value num" id="hero-value">3.42</div>
+            <div class="hero-unit">L / 100km　·　<span class="num">29.2</span> km/L</div>
+            <div class="hero-sub">▾ 较上期 <span class="num">-4.5%</span> · 保持得很稳</div>
+          </div>
+
+          <div class="card tank-card">
+            <div class="tank-top"><span class="t">本箱进行中</span><span class="d num">油量估算 · 仅供参考</span></div>
+            <div class="gauge"><i style="width:62%"></i></div>
+            <div class="gauge-ticks num"><span>E</span><span>1/4</span><span>1/2</span><span>3/4</span><span>F</span></div>
+            <div class="tank-stats">
+              <div class="tank-stat"><div class="k">已跑里程</div><div class="v num">182<small>km</small></div></div>
+              <div class="tank-stat"><div class="k">剩余油量</div><div class="v amber num">≈5.3<small>L</small></div></div>
+              <div class="tank-stat"><div class="k">预计续航</div><div class="v num">155<small>km</small></div></div>
+            </div>
+          </div>
+
+          <div class="month-row">
+            <div class="card month-card">
+              <div class="k"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>本月油费</div>
+              <div class="v num" id="month-cost">¥176.5</div>
+              <div class="trend num">▾ -8.2% vs 上月</div>
+            </div>
+            <div class="card month-card">
+              <div class="k"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round"><path d="M12 2v20M2 12h20"/></svg>每公里成本</div>
+              <div class="v num" id="cost-km">¥0.42<small>/km</small></div>
+              <div class="trend up num">▴ 油价上调 +0.14</div>
+            </div>
+          </div>
+
+          <button class="btn-primary dash-cta">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22h12M4 9h10M14 22V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v18M14 9h2a3 3 0 0 1 3 3v5a1.5 1.5 0 0 0 3 0v-7l-2.5-3.5"/></svg>
+            记一笔加油
+          </button>
+
+          <div class="card last-fill">
+            <div class="pump">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22h12M4 9h10M14 22V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v18M14 9h2a3 3 0 0 1 3 3v5a1.5 1.5 0 0 0 3 0v-7l-2.5-3.5"/></svg>
+            </div>
+            <div class="info">
+              <div class="l1">上次加油 · 中石化 · 学府路</div>
+              <div class="l2 num">09-06 18:42 · 11.2L · 95#</div>
+            </div>
+            <div class="amt num"><div class="a">¥93.07</div><div class="b">区间 3.56 L/100km</div></div>
+          </div>
+
+        </div>
+        <!-- 底部导航 -->
+        <nav class="tabbar">
+          <div class="tab on">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
+            首页<i class="dot"></i>
+          </div>
+          <div class="tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+            记录<i class="dot"></i>
+          </div>
+          <div class="tab"><div class="tab-fab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div></div>
+          <div class="tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+            统计<i class="dot"></i>
+          </div>
+          <div class="tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            设置<i class="dot"></i>
+          </div>
+        </nav>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============ P2 记一笔 ============ -->
+  <div class="device">
+    <div class="device-label"><span class="idx">P2</span><span class="name">记一笔 · 快速录入</span><span class="en">QUICK ADD</span></div>
+    <section class="phone">
+      <div class="screen">
+        <div class="statusbar"><span class="num">21:24</span><span class="sig">▲●● ▫ 5G 87%</span></div>
+        <!-- 底衬：首页内容被 sheet 压暗 -->
+        <div class="screen-scroll" style="filter: blur(1px) brightness(.55); pointer-events:none;">
+          <div class="dash-head">
+            <div class="vehicle-chip"><div class="avatar">CF</div><div><div class="vname">春风 450SR</div><div class="vsub">450cc · 95#</div></div></div>
+          </div>
+          <div class="hero"><span class="label-caps">当前平均油耗</span><div class="hero-value">3.42</div><div class="hero-unit">L / 100km</div></div>
+          <div class="card tank-card"><div class="tank-top"><span class="t">本箱进行中</span></div><div class="gauge"><i style="width:62%"></i></div></div>
+        </div>
+        <div class="sheet-scrim"></div>
+
+        <div class="sheet">
+          <div class="sheet-grip"></div>
+          <div class="sheet-title">
+            <h3>记一笔加油</h3>
+            <span class="date-pill num">09-10 21:24 · 刚刚</span>
+          </div>
+
+          <div class="amount-display">
+            <span class="cur">¥</span><span class="val num">100.0</span>
+            <div class="conv num">单价 <b>8.31</b> 元/L ≈ <b>12.03</b> L · 记满箱</div>
+          </div>
+
+          <div class="mode-seg"><span class="on">按金额</span><span>按升数</span></div>
+
+          <div class="fill-row">
+            <div class="fill-field"><div class="k">单价 元/L</div><div class="v num">8.31 <small>上次</small></div></div>
+            <div class="fill-field"><div class="k">里程表 km</div><div class="v num">6186 <small>+66</small></div></div>
+          </div>
+
+          <div class="full-toggle">
+            <div class="l">
+              <div class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.7s6.5 6.6 6.5 11.3a6.5 6.5 0 1 1-13 0C5.5 9.3 12 2.7 12 2.7z"/></svg></div>
+              <div><div class="t1">加满油箱</div><div class="t2">未加满将不计入区间油耗</div></div>
+            </div>
+            <div class="switch"></div>
+          </div>
+
+          <div class="keypad">
+            <div class="key num">1</div><div class="key num">2</div><div class="key num">3</div>
+            <div class="key num">4</div><div class="key num">5</div><div class="key num">6</div>
+            <div class="key num">7</div><div class="key num">8</div><div class="key num">9</div>
+            <div class="key fn num">.</div><div class="key num">0</div><div class="key fn">⌫</div>
+          </div>
+
+          <button class="btn-primary">保存加油记录</button>
+        </div>
+
+        <nav class="tabbar" style="opacity:.35">
+          <div class="tab on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>首页<i class="dot"></i></div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M8 6h13M8 12h13M8 18h13"/></svg>记录<i class="dot"></i></div>
+          <div class="tab"><div class="tab-fab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div></div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>统计<i class="dot"></i></div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="3"/></svg>设置<i class="dot"></i></div>
+        </nav>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============ P3 历史记录 ============ -->
+  <div class="device">
+    <div class="device-label"><span class="idx">P3</span><span class="name">记录 · 加油历史</span><span class="en">HISTORY</span></div>
+    <section class="phone">
+      <div class="screen">
+        <div class="statusbar"><span class="num">21:24</span><span class="sig">▲●● ▫ 5G 87%</span></div>
+        <div class="screen-scroll" id="history-scroll">
+          <div class="hist-head">
+            <h2>加油记录</h2>
+            <span class="chip num">12 笔 · 4 个月</span>
+          </div>
+          <div class="hist-summary">
+            <div class="card hs"><div class="v num" id="hs-total-l">106.5L</div><div class="k">累计加油</div></div>
+            <div class="card hs"><div class="v num" id="hs-total-amt">¥882</div><div class="k">累计花费</div></div>
+            <div class="card hs"><div class="v num">2660<small style="font-size:10px;color:var(--on-surface-3)">km</small></div><div class="k">累计里程</div></div>
+          </div>
+          <div id="history-list"><!-- JS 注入 --></div>
+        </div>
+        <nav class="tabbar">
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>首页<i class="dot"></i></div>
+          <div class="tab on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M8 6h13M8 12h13M8 18h13"/></svg>记录<i class="dot"></i></div>
+          <div class="tab"><div class="tab-fab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div></div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>统计<i class="dot"></i></div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="3"/></svg>设置<i class="dot"></i></div>
+        </nav>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============ P4 统计 ============ -->
+  <div class="device">
+    <div class="device-label"><span class="idx">P4</span><span class="name">统计 · 趋势分析</span><span class="en">STATS</span></div>
+    <section class="phone">
+      <div class="screen">
+        <div class="statusbar"><span class="num">21:24</span><span class="sig">▲●● ▫ 5G 87%</span></div>
+        <div class="screen-scroll">
+          <div class="stats-head">
+            <h2>统计</h2>
+            <div class="range-seg"><span>3月</span><span class="on">半年</span><span>全部</span></div>
+          </div>
+
+          <div class="card chart-card">
+            <div class="ct-head"><span class="t">区间油耗趋势</span><span class="s num">均值 3.42 L/100km</span></div>
+            <div class="chart-wrap" id="trend-chart"><!-- JS 注入 SVG --></div>
+            <div class="chart-legend">
+              <span><i style="background:#F59E0B"></i>区间油耗</span>
+              <span><i style="background:rgba(148,163,184,.6)"></i>平均线</span>
+              <span><i style="background:#34D399;border-radius:50%;width:6px;height:6px"></i>加满锚点</span>
+            </div>
+          </div>
+
+          <div class="card chart-card">
+            <div class="ct-head"><span class="t">月度油费</span><span class="s num">近 4 个月</span></div>
+            <div class="chart-wrap" id="month-chart"><!-- JS 注入 --></div>
+          </div>
+
+          <div class="card chart-card">
+            <div class="ct-head"><span class="t">加油站油耗对比</span><span class="s">越短越省</span></div>
+            <div id="station-chart"><!-- JS 注入 --></div>
+          </div>
+        </div>
+        <nav class="tabbar">
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>首页<i class="dot"></i></div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M8 6h13M8 12h13M8 18h13"/></svg>记录<i class="dot"></i></div>
+          <div class="tab"><div class="tab-fab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div></div>
+          <div class="tab on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>统计<i class="dot"></i></div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="3"/></svg>设置<i class="dot"></i></div>
+        </nav>
+      </div>
+    </section>
+  </div>
+
+</main>
+
+<script>
+/* 油迹 · mock 数据 —— 演示满箱法计算 */
+const VEHICLE = {
+  name: '春风 450SR',
+  tankCapacity: 14,          // L
+  fuelGrade: '95#',
+  displacement: '450cc',
+};
+
+/* 加油记录（时间倒序展示，计算时按正序）
+ * 满箱法：区间油耗 = (A, B] 段内加油量之和 / (B.odo − A.odo) × 100
+ * 仅 isFull=true 的记录作为计算锚点；未加满记录参与累计但不出区间油耗 */
+const FILLUPS = [
+  { id: 12, date: '09-06', time: '18:42', odo: 6120, volume: 11.2, price: 8.31, amount: 93.07, full: true,  station: '中石化 · 学府路' },
+  { id: 11, date: '08-28', time: '19:05', odo: 5812, volume: 5.0,  price: 8.31, amount: 41.55, full: false, station: '中石油 · 三环辅路', note: '顺路补 50 块' },
+  { id: 10, date: '08-24', time: '08:15', odo: 5680, volume: 9.8,  price: 8.31, amount: 81.44, full: true,  station: '中石化 · 学府路' },
+  { id:  9, date: '08-10', time: '17:58', odo: 5390, volume: 10.1, price: 8.45, amount: 85.35, full: true,  station: '壳牌 · 机场高速' },
+  { id:  8, date: '07-29', time: '19:22', odo: 5120, volume: 3.0,  price: 8.45, amount: 25.35, full: false, station: '中石化 · 学府路' },
+  { id:  7, date: '07-26', time: '09:41', odo: 5060, volume: 9.5,  price: 8.45, amount: 80.28, full: true,  station: '中石油 · 开发区' },
+  { id:  6, date: '07-12', time: '18:30', odo: 4800, volume: 9.9,  price: 8.52, amount: 84.35, full: true,  station: '中石化 · 学府路' },
+  { id:  5, date: '06-28', time: '20:10', odo: 4540, volume: 9.6,  price: 8.52, amount: 81.79, full: true,  station: '中石化 · 学府路' },
+  { id:  4, date: '06-14', time: '18:05', odo: 4290, volume: 9.4,  price: 8.66, amount: 81.40, full: true,  station: '壳牌 · 机场高速' },
+  { id:  3, date: '05-31', time: '19:47', odo: 4030, volume: 9.8,  price: 8.66, amount: 84.87, full: true,  station: '中石油 · 开发区' },
+  { id:  2, date: '05-18', time: '08:33', odo: 3780, volume: 9.2,  price: 8.73, amount: 80.32, full: true,  station: '中石化 · 学府路' },
+  { id:  1, date: '05-04', time: '17:20', odo: 3520, volume: 10.0, price: 8.73, amount: 87.30, full: true,  station: '中石化 · 学府路', note: '提车首箱 · 基准' },
+];
+
+/* 满箱法计算：返回带区间油耗的段列表（新→旧） */
+function computeSegments(records) {
+  const asc = [...records].sort((a, b) => a.odo - b.odo);
+  const segments = [];
+  for (let i = 1; i < asc.length; i++) {
+    const b = asc[i];
+    if (!b.full) continue;
+    // 向前找上一个加满锚点
+    let j = i - 1;
+    while (j >= 0 && !asc[j].full) j--;
+    if (j < 0) continue;
+    const a = asc[j];
+    const dist = b.odo - a.odo;
+    if (dist <= 0) continue;
+    // (a, b] 段内油量：含 b，不含 a
+    const fuel = asc.slice(j + 1, i + 1).reduce((s, r) => s + r.volume, 0);
+    const cost = asc.slice(j + 1, i + 1).reduce((s, r) => s + r.amount, 0);
+    segments.push({
+      from: a, to: b,
+      dist, fuel, cost,
+      l100: fuel / dist * 100,
+      kmPerL: dist / fuel,
+      costPerKm: cost / dist,
+    });
+  }
+  return segments.reverse();
+}
+
+const SEGMENTS = computeSegments(FILLUPS);
+const AVG_L100 = SEGMENTS.reduce((s, x) => s + x.fuel, 0) / SEGMENTS.reduce((s, x) => s + x.dist, 0) * 100;
+const LAST_ANCHOR = [...FILLUPS].sort((a, b) => b.odo - a.odo).find(r => r.full);
+const CURRENT_ODO = 6186;                    // 当前里程（假设）
+const TANK_USED = CURRENT_ODO - LAST_ANCHOR.odo;   // 本箱已跑
+const TANK_REMAIN_L = Math.max(VEHICLE.tankCapacity - TANK_USED / 100 * AVG_L100, 0);
+const RANGE_KM = Math.round(TANK_REMAIN_L / AVG_L100 * 100);
+
+const fmt = (n, d = 2) => n.toFixed(d);
+
+</script>
+<script>
+/* 油迹 · 原型动态注入：历史列表 + 图表（数据来自 data.js 的满箱法计算结果） */
+
+/* ---------- 首页动态数值（与满箱法计算对齐，避免手写数字对不上） ---------- */
+(() => {
+  const $ = id => document.getElementById(id);
+  if (!$('hero-value')) return;
+  $('hero-value').textContent = fmt(AVG_L100);
+  const last = SEGMENTS[0];
+  // 本月花费：9 月两笔（09-06 满 + 08-28 部分）
+  const monthCost = FILLUPS.filter(r => r.date.startsWith('09') || r.date.startsWith('08-28'))
+    .reduce((s, r) => s + r.amount, 0);
+  $('month-cost').textContent = '¥' + fmt(monthCost, 1);
+  $('cost-km').innerHTML = '¥' + fmt(last.costPerKm) + '<small>/km</small>';
+})();
+
+/* ---------- P3 历史列表 ---------- */
+(() => {
+  const list = document.getElementById('history-list');
+  if (!list) return;
+
+  // 段索引：r.id → 区间油耗（作为 to 锚点的记录才有区间油耗）
+  const ecoById = {};
+  SEGMENTS.forEach(s => { ecoById[s.to.id] = s; });
+
+  const groups = {};
+  FILLUPS.forEach(r => {
+    const mon = r.date.slice(0, 2);
+    (groups[mon] = groups[mon] || []).push(r);
+  });
+
+  const monNames = { '05': '5 月', '06': '6 月', '07': '7 月', '08': '8 月', '09': '9 月' };
+  let html = '';
+  Object.keys(groups).sort((a, b) => b - a).forEach(mon => {
+    html += `<div class="month-tag"><b>${monNames[mon]}</b><span class="num">${groups[mon].length} 笔</span></div>`;
+    groups[mon].forEach(r => {
+      const seg = ecoById[r.id];
+      const isAnchor = r.full;
+      html += `
+      <div class="card fill-item ${r.full ? '' : 'partial'}">
+        <div class="day"><div class="d num">${r.date.slice(3)}</div><div class="m">${mon}月 · ${r.time}</div></div>
+        <div class="mid">
+          <div class="station">${r.station}${r.full ? '<span class="badge-partial badge-anchor">FULL</span>' : '<span class="badge-partial">PARTIAL</span>'}</div>
+          <div class="meta num">${r.volume}L · ${r.price} 元/L · ${r.odo} km${r.note ? ' · ' + r.note : ''}</div>
+        </div>
+        <div class="right">
+          <div class="eco num">${seg ? fmt(seg.l100) + '<small> L/100km</small>' : '—'}</div>
+          <div class="amt num">¥${fmt(r.amount)}</div>
+        </div>
+      </div>`;
+    });
+  });
+  list.innerHTML = html;
+
+  // 顶部汇总
+  const totalL = FILLUPS.reduce((s, r) => s + r.volume, 0);
+  const totalAmt = FILLUPS.reduce((s, r) => s + r.amount, 0);
+  document.getElementById('hs-total-l').textContent = fmt(totalL, 1) + 'L';
+  document.getElementById('hs-total-amt').textContent = '¥' + Math.round(totalAmt);
+})();
+
+/* ---------- P4 油耗趋势折线（手绘 SVG） ---------- */
+(() => {
+  const box = document.getElementById('trend-chart');
+  if (!box) return;
+  const segs = [...SEGMENTS].reverse();           // 旧 → 新
+  const W = 320, H = 150, PAD = 8;
+  const vals = segs.map(s => s.l100);
+  const min = Math.min(...vals) - .15, max = Math.max(...vals) + .15;
+  const x = i => PAD + i * (W - PAD * 2) / (segs.length - 1);
+  const y = v => H - PAD - (v - min) / (max - min) * (H - PAD * 2 - 12);
+
+  const pts = vals.map((v, i) => `${x(i)},${y(v)}`).join(' ');
+  const avgY = y(AVG_L100);
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">`;
+  // 网格
+  for (let g = 0; g < 3; g++) {
+    const gy = PAD + g * (H - PAD * 2) / 2;
+    svg += `<line x1="${PAD}" y1="${gy}" x2="${W - PAD}" y2="${gy}" stroke="rgba(148,163,184,.09)" stroke-width="1"/>`;
+  }
+  // 平均线
+  svg += `<line x1="${PAD}" y1="${avgY}" x2="${W - PAD}" y2="${avgY}" stroke="rgba(148,163,184,.55)" stroke-width="1.2" stroke-dasharray="4 5"/>`;
+  // 面积
+  svg += `<polygon points="${PAD},${H - PAD} ${pts} ${W - PAD},${H - PAD}" fill="url(#tg)" opacity=".22"/>`;
+  svg += `<defs><linearGradient id="tg" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#F59E0B"/><stop offset="1" stop-color="#F59E0B" stop-opacity="0"/></linearGradient></defs>`;
+  // 折线
+  svg += `<polyline points="${pts}" fill="none" stroke="#F59E0B" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  // 数据点 + 最新值标签
+  segs.forEach((s, i) => {
+    const isLast = i === segs.length - 1;
+    svg += `<circle cx="${x(i)}" cy="${y(vals[i])}" r="${isLast ? 4.5 : 3}" fill="#0B0F16" stroke="${isLast ? '#FCD34D' : '#F59E0B'}" stroke-width="2"/>`;
+  });
+  const li = segs.length - 1;
+  svg += `<rect x="${x(li) - 26}" y="${y(vals[li]) - 26}" width="52" height="17" rx="8" fill="#F59E0B"/>
+          <text x="${x(li)}" y="${y(vals[li]) - 14}" text-anchor="middle" font-size="10.5" font-weight="600" fill="#1A1207" font-family="Chakra Petch">${fmt(vals[li])}</text>`;
+  // 首尾月份
+  svg += `<text x="${PAD}" y="${H - 1}" font-size="8.5" fill="#6B7280" font-family="Chakra Petch">5月</text>`;
+  svg += `<text x="${W - PAD}" y="${H - 1}" text-anchor="end" font-size="8.5" fill="#6B7280" font-family="Chakra Petch">9月</text>`;
+  svg += '</svg>';
+  box.innerHTML = svg;
+})();
+
+/* ---------- P4 月度油费柱状 ---------- */
+(() => {
+  const box = document.getElementById('month-chart');
+  if (!box) return;
+  const byMonth = {};
+  FILLUPS.forEach(r => {
+    const m = r.date.slice(0, 2);
+    byMonth[m] = (byMonth[m] || 0) + r.amount;
+  });
+  const max = Math.max(...Object.values(byMonth));
+  box.innerHTML = Object.keys(byMonth).sort().map(m => `
+    <div class="bar-row">
+      <span class="bl num">${+m} 月</span>
+      <div class="track"><i style="width:${Math.round(byMonth[m] / max * 100)}%"></i></div>
+      <span class="bv num">¥${Math.round(byMonth[m])}</span>
+    </div>`).join('');
+})();
+
+/* ---------- P4 加油站对比 ---------- */
+(() => {
+  const box = document.getElementById('station-chart');
+  if (!box) return;
+  // 站点 → 平均区间油耗（按锚点段归属 to 站点）
+  const st = {};
+  SEGMENTS.forEach(s => {
+    const name = s.to.station.split(' · ')[0];
+    (st[name] = st[name] || []).push(s.l100);
+  });
+  const rows = Object.keys(st).map(k => ({ k, v: st[k].reduce((a, b) => a + b, 0) / st[k].length }));
+  const max = Math.max(...rows.map(r => r.v));
+  rows.sort((a, b) => a.v - b.v);
+  box.innerHTML = rows.map((r, i) => `
+    <div class="bar-row ${i === 0 ? 'green' : ''}">
+      <span class="bl">${r.k}</span>
+      <div class="track"><i style="width:${Math.round(r.v / max * 100)}%"></i></div>
+      <span class="bv num">${fmt(r.v)}</span>
+    </div>`).join('');
+})();
+
+</script>
+</body>
+</html>

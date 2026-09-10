@@ -286,6 +286,11 @@ body {
 .fill-field .k { font-size: 10.5px; color: var(--on-surface-3); letter-spacing: .1em; margin-bottom: 4px; }
 .fill-field .v { font-size: 16.5px; font-weight: 600; font-family: var(--font-display); font-weight: 500; }
 .fill-field .v small { font-family: var(--font-body); font-size: 11px; color: var(--on-surface-3); font-weight: 400; }
+.fill-field .v.site-name {
+  font-family: var(--font-body); font-size: 13.5px; font-weight: 500;
+  display: flex; align-items: center; gap: 5px; white-space: nowrap;
+}
+.fill-field .v.ph { font-family: var(--font-body); font-size: 13.5px; color: var(--on-surface-3); font-weight: 400; }
 
 .full-toggle {
   display: flex; align-items: center; justify-content: space-between;
@@ -329,7 +334,7 @@ body {
 .fill-item .day .d { font-family: var(--font-display); font-size: 19px; font-weight: 500; }
 .fill-item .day .m { font-size: 10px; color: var(--on-surface-3); margin-top: 2px; }
 .fill-item .mid { flex: 1; min-width: 0; }
-.fill-item .mid .station { font-size: 13.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fill-item .mid .title-line { font-size: 13.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .fill-item .mid .meta { font-size: 11.5px; color: var(--on-surface-3); margin-top: 3px; }
 .fill-item .right { text-align: right; flex: none; }
 .fill-item .right .eco { font-family: var(--font-display); font-size: 15px; color: var(--success); }
@@ -368,6 +373,20 @@ body {
 .bar-row .track i { display: block; height: 100%; border-radius: 5px; background: linear-gradient(90deg, #92400E, #F59E0B); }
 .bar-row.green .track i { background: linear-gradient(90deg, #065F46, #34D399); }
 .bar-row .bv { width: 58px; text-align: right; font-family: var(--font-display); font-size: 12px; color: var(--on-surface-2); }
+
+/* ============================================
+   P5 设置
+   ============================================ */
+.set-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; }
+.set-row > div:first-child { flex: 1; min-width: 0; }
+.set-row .s-t { font-size: 14px; font-weight: 500; }
+.set-row .s-d { font-size: 11px; color: var(--on-surface-3); margin-top: 3px; }
+.set-row .s-v { font-size: 14px; font-weight: 600; font-family: var(--font-display); display: flex; align-items: center; gap: 4px; flex: none; }
+.set-row .s-v small { font-family: var(--font-body); font-size: 10.5px; color: var(--on-surface-3); font-weight: 400; }
+.set-div { height: 1px; background: var(--outline); margin-left: 16px; }
+.seg-mini { display: flex; background: rgba(11,15,22,.6); border: 1px solid var(--outline); border-radius: 9px; padding: 2px; flex: none; }
+.seg-mini span { font-size: 11px; padding: 5px 10px; border-radius: 7px; color: var(--on-surface-3); }
+.seg-mini span.on { background: var(--surface-high); color: var(--primary); font-weight: 500; box-shadow: inset 0 0 0 1px var(--primary-line); }
 
 /* 页面载入编排 */
 .device { animation: rise .7s var(--ease-out) backwards; }

@@ -5,12 +5,20 @@
   const $ = id => document.getElementById(id);
   if (!$('hero-value')) return;
   $('hero-value').textContent = fmt(AVG_L100);
+  if ($('avg-line')) $('avg-line').textContent = fmt(AVG_L100);
+  // 最新区间 vs 均值
   const last = SEGMENTS[0];
-  // 本月花费：9 月两笔（09-06 满 + 08-28 部分）
-  const monthCost = FILLUPS.filter(r => r.date.startsWith('09') || r.date.startsWith('08-28'))
-    .reduce((s, r) => s + r.amount, 0);
+  const pct = (last.l100 - AVG_L100) / AVG_L100 * 100;
+  $('hero-sub').textContent = (pct <= 0 ? '▾ ' : '▴ ') + '最新区间 ' + fmt(last.l100)
+    + ' · ' + (pct <= 0 ? '低于' : '高于') + '均值 ' + Math.abs(pct).toFixed(0) + '%';
+  // 本月（9月）实际油费 = 09-06 一笔
+  const monthCost = FILLUPS.filter(r => r.date.startsWith('09')).reduce((s, r) => s + r.volume, 0) * SETTINGS.defaultPricePerL;
   $('month-cost').textContent = '¥' + fmt(monthCost, 1);
   $('cost-km').innerHTML = '¥' + fmt(last.costPerKm) + '<small>/km</small>';
+  // 满箱续航卡：纯记录统计（无中途补加的段），不依赖任何实时数据
+  $('range-avg').textContent = RANGE_AVG_KM;
+  $('range-last').textContent = RANGE_LAST_KM;
+  $('range-count').textContent = PURE_SEGS.length;
 })();
 
 /* ---------- P3 历史列表 ---------- */
@@ -39,12 +47,12 @@
       <div class="card fill-item ${r.full ? '' : 'partial'}">
         <div class="day"><div class="d num">${r.date.slice(3)}</div><div class="m">${mon}月 · ${r.time}</div></div>
         <div class="mid">
-          <div class="station">${r.station}${r.full ? '<span class="badge-partial badge-anchor">FULL</span>' : '<span class="badge-partial">PARTIAL</span>'}</div>
-          <div class="meta num">${r.volume}L · ${r.price} 元/L · ${r.odo} km${r.note ? ' · ' + r.note : ''}</div>
+          <div class="title-line">${r.full ? '加满' : '部分加油'}${r.full ? '<span class="badge-partial badge-anchor">FULL</span>' : '<span class="badge-partial">PARTIAL</span>'}</div>
+          <div class="meta num">${r.volume}L · 表显 ${r.odo} km${r.note ? ' · ' + r.note : ''}</div>
         </div>
         <div class="right">
           <div class="eco num">${seg ? fmt(seg.l100) + '<small> L/100km</small>' : '—'}</div>
-          <div class="amt num">¥${fmt(r.amount)}</div>
+          <div class="amt num">¥${fmt(r.volume * SETTINGS.defaultPricePerL)}</div>
         </div>
       </div>`;
     });
@@ -53,7 +61,7 @@
 
   // 顶部汇总
   const totalL = FILLUPS.reduce((s, r) => s + r.volume, 0);
-  const totalAmt = FILLUPS.reduce((s, r) => s + r.amount, 0);
+  const totalAmt = FILLUPS.reduce((s, r) => s + r.volume, 0) * SETTINGS.defaultPricePerL;
   document.getElementById('hs-total-l').textContent = fmt(totalL, 1) + 'L';
   document.getElementById('hs-total-amt').textContent = '¥' + Math.round(totalAmt);
 })();
@@ -107,7 +115,7 @@
   const byMonth = {};
   FILLUPS.forEach(r => {
     const m = r.date.slice(0, 2);
-    byMonth[m] = (byMonth[m] || 0) + r.amount;
+    byMonth[m] = (byMonth[m] || 0) + r.volume * SETTINGS.defaultPricePerL;
   });
   const max = Math.max(...Object.values(byMonth));
   box.innerHTML = Object.keys(byMonth).sort().map(m => `
@@ -118,23 +126,6 @@
     </div>`).join('');
 })();
 
-/* ---------- P4 加油站对比 ---------- */
-(() => {
-  const box = document.getElementById('station-chart');
-  if (!box) return;
-  // 站点 → 平均区间油耗（按锚点段归属 to 站点）
-  const st = {};
-  SEGMENTS.forEach(s => {
-    const name = s.to.station.split(' · ')[0];
-    (st[name] = st[name] || []).push(s.l100);
-  });
-  const rows = Object.keys(st).map(k => ({ k, v: st[k].reduce((a, b) => a + b, 0) / st[k].length }));
-  const max = Math.max(...rows.map(r => r.v));
-  rows.sort((a, b) => a.v - b.v);
-  box.innerHTML = rows.map((r, i) => `
-    <div class="bar-row ${i === 0 ? 'green' : ''}">
-      <span class="bl">${r.k}</span>
-      <div class="track"><i style="width:${Math.round(r.v / max * 100)}%"></i></div>
-      <span class="bv num">${fmt(r.v)}</span>
-    </div>`).join('');
-})();
+/* ---------- P4 单价走势：已按需求移除（油价为全局默认值，单价恒为常数，无走势可言） ---------- */
+
+/* ---------- 站点对比功能已整体移除 ---------- */

@@ -1,0 +1,201 @@
+import 'package:drift/drift.dart' as drift;
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+
+import '../data/database.dart';
+import '../data/providers.dart';
+import '../theme/tokens.dart';
+import '../widgets/common.dart';
+
+/// 记一笔加油 Bottom Sheet（仅升数录入，金额按默认油价折算只读展示）
+Future<void> showAddFillUpSheet(BuildContext context) {
+  return showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (c) => const AddFillUpSheet(),
+  );
+}
+
+class AddFillUpSheet extends ConsumerStatefulWidget {
+  const AddFillUpSheet({super.key});
+  @override
+  ConsumerState<AddFillUpSheet> createState() => _AddFillUpSheetState();
+}
+
+class _AddFillUpSheetState extends ConsumerState<AddFillUpSheet> {
+  final _volumeCtrl = TextEditingController();
+  final _odoCtrl = TextEditingController();
+  final _noteCtrl = TextEditingController();
+  bool _full = true;
+  DateTime _time = DateTime.now();
+  String? _odoWarn;
+
+  @override
+  Widget build(BuildContext context) {
+    final vehicle = ref.watch(activeVehicleProvider).value;
+    final fills = ref.watch(fillUpsProvider).value ?? const <FillUp>[];
+    final price = ref.watch(defaultPriceProvider).value ?? 8.31;
+    final lastOdo = fills.isNotEmpty ? fills.first.odometer : null;
+
+    final vol = double.tryParse(_volumeCtrl.text) ?? 0;
+    final amount = vol > 0 ? vol * price : null;
+    final canSave = vehicle != null && vol > 0 && double.tryParse(_odoCtrl.text) != null;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter,
+              colors: [Color(0xFF232E3E), Color(0xFF18202C)]),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          border: Border(top: BorderSide(color: Y.outlineStrong)),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 26),
+        child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(width: 40, height: 4, decoration: BoxDecoration(color: Y.outlineStrong, borderRadius: BorderRadius.circular(4))),
+          const SizedBox(height: 16),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            const Text('记一笔加油', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+            GestureDetector(
+              onTap: _pickTime,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+                decoration: BoxDecoration(color: Y.surfaceHigh, border: Border.all(color: Y.outline), borderRadius: BorderRadius.circular(999)),
+                child: Text(DateFormat('MM-dd HH:mm').format(_time), style: const TextStyle(fontSize: 12, color: Y.onSurface2)),
+              ),
+            ),
+          ]),
+          const SizedBox(height: 18),
+
+          // 升数大输入
+          TextField(
+            controller: _volumeCtrl, autofocus: true,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 46, fontWeight: FontWeight.w500, fontFeatures: [FontFeature.tabularFigures()]),
+            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+            decoration: const InputDecoration(
+              hintText: '0.0', hintStyle: TextStyle(color: Y.onSurface3),
+              suffixText: 'L', suffixStyle: TextStyle(fontSize: 18, color: Y.onSurface3),
+              border: InputBorder.none,
+            ),
+            onChanged: (_) => setState(() {}),
+          ),
+          Text(
+            amount != null ? '≈ ¥${_fmt(amount)} · 按默认油价 ${_fmt(price)} 元/L 折算' : '输入升数 · 金额按设置默认油价折算',
+            style: const TextStyle(fontSize: 12.5, color: Y.onSurface3),
+          ),
+          const SizedBox(height: 16),
+
+          Row(children: [
+            Expanded(child: _field('里程表 km', TextField(
+              controller: _odoCtrl,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w500, fontFeatures: [FontFeature.tabularFigures()]),
+              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+              decoration: InputDecoration(
+                border: InputBorder.none, isDense: true,
+                helperText: _odoWarn, helperStyle: const TextStyle(color: Y.primary, fontSize: 11),
+                hintText: lastOdo != null ? '$lastOdo' : '首次录入',
+                hintStyle: const TextStyle(color: Y.onSurface3),
+              ),
+              onChanged: (v) {
+                final o = double.tryParse(v);
+                setState(() {
+                  _odoWarn = (o != null && lastOdo != null && o < lastOdo) ? '小于上次 $lastOdo，请确认没抄错' : null;
+                });
+              },
+            ))),
+            const SizedBox(width: 10),
+            Expanded(child: _field('本次金额', Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Text(amount != null ? '≈¥${_fmt(amount)}' : '—',
+                  style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w500,
+                      color: Y.onSurface2, fontFeatures: [FontFeature.tabularFigures()])),
+            ))),
+          ]),
+          const SizedBox(height: 12),
+
+          // 加满开关
+          Container(
+            decoration: BoxDecoration(
+              color: _full ? Y.primarySoft : Y.surfaceHigh,
+              border: Border.all(color: _full ? Y.primaryLine : Y.outline),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(children: [
+              Container(
+                width: 34, height: 34,
+                decoration: BoxDecoration(color: Y.primary.withOpacity(.18), borderRadius: BorderRadius.circular(10)),
+                child: const Icon(Icons.water_drop, size: 16, color: Y.primary),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('加满油箱', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                Text('未加满将不计入区间油耗', style: TextStyle(fontSize: 11, color: Y.onSurface3)),
+              ])),
+              Switch(value: _full, activeColor: Y.primary, onChanged: (v) => setState(() => _full = v)),
+            ]),
+          ),
+          const SizedBox(height: 12),
+
+          _field('备注（选填）', TextField(
+            controller: _noteCtrl,
+            style: const TextStyle(fontSize: 14),
+            decoration: const InputDecoration(border: InputBorder.none, isDense: true, hintText: '＋ 点击添加', hintStyle: TextStyle(color: Y.onSurface3)),
+          )),
+          const SizedBox(height: 18),
+
+          YPrimaryButton(
+            label: '保存加油记录',
+            icon: Icons.local_gas_station,
+            onPressed: canSave ? () => _save(vehicle, vol) : null,
+          ),
+        ])),
+      ),
+    );
+  }
+
+  Widget _field(String label, Widget child) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+    decoration: BoxDecoration(
+      color: const Color(0x8C0B0F16), border: Border.all(color: Y.outline),
+      borderRadius: BorderRadius.circular(Y.rCtl),
+    ),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(label, style: const TextStyle(fontSize: 10.5, color: Y.onSurface3, letterSpacing: 1)),
+      const SizedBox(height: 2),
+      child,
+    ]),
+  );
+
+  Future<void> _pickTime() async {
+    final d = await showDatePicker(context: context, initialDate: _time, firstDate: DateTime(2020), lastDate: DateTime.now());
+    if (d == null) return;
+    final t = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(_time));
+    setState(() => _time = DateTime(d.year, d.month, d.day, t?.hour ?? _time.hour, t?.minute ?? _time.minute));
+  }
+
+  Future<void> _save(Vehicle v, double vol) async {
+    final db = ref.read(dbProvider);
+    await db.addFillUp(FillUpsCompanion.insert(
+      vehicleId: v.id,
+      filledAt: _time,
+      odometer: double.parse(_odoCtrl.text),
+      isFullTank: _full,
+      volumeL: vol,
+      note: drift.Value(_noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim()),
+    ));
+    if (mounted) {
+      Navigator.pop(context);
+      HapticFeedback.lightImpact();
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('已保存加油记录'), duration: Duration(seconds: 2)));
+    }
+  }
+
+  String _fmt(double n) => n.toStringAsFixed(2);
+}

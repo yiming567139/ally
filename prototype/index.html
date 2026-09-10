@@ -19,6 +19,8 @@
   <p class="board-note">
     摩托车油耗记录 App · 深色「夜骑仪表盘」风格 · Charcoal + 琥珀背光。<br>
     油耗口径为<b>满箱法</b>：仅「加满 → 加满」区间出区间油耗，未加满记录标 PARTIAL 不计边界。
+    录入<b>只填升数</b>，油价在设置页维护默认值（当前 8.31 元/L），全部金额与成本由默认值折算。
+    新增记录的入口统一为底部中央的<b>「＋」悬浮按钮</b>，首页不再放独立按钮。
     数字为演示数据；最终实现为 Flutter，此原型用于确认信息架构与视觉方向。
   </p>
 </header>
@@ -38,7 +40,7 @@
               <div class="avatar">CF</div>
               <div>
                 <div class="vname">春风 450SR</div>
-                <div class="vsub">450cc · 95# · 油箱 14L</div>
+                <div class="vsub">95# 汽油</div>
               </div>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
             </div>
@@ -54,49 +56,42 @@
               <defs><linearGradient id="ga" x1="0" y1="1" x2="1" y2="0"><stop stop-color="#B45309"/><stop offset="1" stop-color="#FCD34D"/></linearGradient></defs>
             </svg>
             <span class="label-caps">当前平均油耗 / AVG CONSUMPTION</span>
-            <div class="hero-value num" id="hero-value">3.42</div>
-            <div class="hero-unit">L / 100km　·　<span class="num">29.2</span> km/L</div>
-            <div class="hero-sub">▾ 较上期 <span class="num">-4.5%</span> · 保持得很稳</div>
+            <div class="hero-value num" id="hero-value">3.36</div>
+            <div class="hero-unit">L / 100km　·　<span class="num">29.8</span> km/L</div>
+            <div class="hero-sub num" id="hero-sub">▾ 最新区间 3.09 · 低于均值</div>
           </div>
 
           <div class="card tank-card">
-            <div class="tank-top"><span class="t">本箱进行中</span><span class="d num">油量估算 · 仅供参考</span></div>
-            <div class="gauge"><i style="width:62%"></i></div>
-            <div class="gauge-ticks num"><span>E</span><span>1/4</span><span>1/2</span><span>3/4</span><span>F</span></div>
+            <div class="tank-top"><span class="t">满箱续航</span><span class="d num">按无中途补加的段实测</span></div>
             <div class="tank-stats">
-              <div class="tank-stat"><div class="k">已跑里程</div><div class="v num">182<small>km</small></div></div>
-              <div class="tank-stat"><div class="k">剩余油量</div><div class="v amber num">≈5.3<small>L</small></div></div>
-              <div class="tank-stat"><div class="k">预计续航</div><div class="v num">155<small>km</small></div></div>
+              <div class="tank-stat"><div class="k">平均每箱</div><div class="v amber num"><span id="range-avg">261</span><small>km</small></div></div>
+              <div class="tank-stat"><div class="k">最近一箱</div><div class="v num"><span id="range-last">290</span><small>km</small></div></div>
+              <div class="tank-stat"><div class="k">统计样本</div><div class="v num"><span id="range-count">7</span><small>段</small></div></div>
             </div>
           </div>
 
           <div class="month-row">
             <div class="card month-card">
               <div class="k"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>本月油费</div>
-              <div class="v num" id="month-cost">¥176.5</div>
-              <div class="trend num">▾ -8.2% vs 上月</div>
+              <div class="v num" id="month-cost">¥71.5</div>
+              <div class="trend">· 本月进行中</div>
             </div>
             <div class="card month-card">
               <div class="k"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round"><path d="M12 2v20M2 12h20"/></svg>每公里成本</div>
-              <div class="v num" id="cost-km">¥0.42<small>/km</small></div>
-              <div class="trend up num">▴ 油价上调 +0.14</div>
+              <div class="v num" id="cost-km">¥0.26<small>/km</small></div>
+              <div class="trend num">按默认油价 8.31 元/L 折算</div>
             </div>
           </div>
 
-          <button class="btn-primary dash-cta">
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22h12M4 9h10M14 22V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v18M14 9h2a3 3 0 0 1 3 3v5a1.5 1.5 0 0 0 3 0v-7l-2.5-3.5"/></svg>
-            记一笔加油
-          </button>
-
-          <div class="card last-fill">
+          <div class="card last-fill" style="margin-top:2px">
             <div class="pump">
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22h12M4 9h10M14 22V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v18M14 9h2a3 3 0 0 1 3 3v5a1.5 1.5 0 0 0 3 0v-7l-2.5-3.5"/></svg>
             </div>
             <div class="info">
-              <div class="l1">上次加油 · 中石化 · 学府路</div>
-              <div class="l2 num">09-06 18:42 · 11.2L · 95#</div>
+              <div class="l1">上次加油</div>
+              <div class="l2 num">09-06 18:42 · 8.6L · ¥8.31/L</div>
             </div>
-            <div class="amt num"><div class="a">¥93.07</div><div class="b">区间 3.56 L/100km</div></div>
+            <div class="amt num"><div class="a">¥71.47</div><div class="b">区间 3.09 L/100km</div></div>
           </div>
 
         </div>
@@ -133,10 +128,10 @@
         <!-- 底衬：首页内容被 sheet 压暗 -->
         <div class="screen-scroll" style="filter: blur(1px) brightness(.55); pointer-events:none;">
           <div class="dash-head">
-            <div class="vehicle-chip"><div class="avatar">CF</div><div><div class="vname">春风 450SR</div><div class="vsub">450cc · 95#</div></div></div>
+            <div class="vehicle-chip"><div class="avatar">CF</div><div><div class="vname">春风 450SR</div><div class="vsub">95# 汽油</div></div></div>
           </div>
-          <div class="hero"><span class="label-caps">当前平均油耗</span><div class="hero-value">3.42</div><div class="hero-unit">L / 100km</div></div>
-          <div class="card tank-card"><div class="tank-top"><span class="t">本箱进行中</span></div><div class="gauge"><i style="width:62%"></i></div></div>
+          <div class="hero"><span class="label-caps">当前平均油耗</span><div class="hero-value">3.36</div><div class="hero-unit">L / 100km</div></div>
+          <div class="card tank-card"><div class="tank-top"><span class="t">满箱续航</span></div><div class="tank-stats"><div class="tank-stat"><div class="k">平均每箱</div><div class="v num">261<small>km</small></div></div><div class="tank-stat"><div class="k">最近一箱</div><div class="v num">290<small>km</small></div></div></div></div>
         </div>
         <div class="sheet-scrim"></div>
 
@@ -148,15 +143,13 @@
           </div>
 
           <div class="amount-display">
-            <span class="cur">¥</span><span class="val num">100.0</span>
-            <div class="conv num">单价 <b>8.31</b> 元/L ≈ <b>12.03</b> L · 记满箱</div>
+            <span class="val num">12.0</span><span style="font-size:18px;color:var(--on-surface-3);margin-left:8px">L</span>
+            <div class="conv num">≈ <b>¥99.7</b> · 按设置默认油价 <b>8.31</b> 元/L 折算 · 记满箱</div>
           </div>
 
-          <div class="mode-seg"><span class="on">按金额</span><span>按升数</span></div>
-
           <div class="fill-row">
-            <div class="fill-field"><div class="k">单价 元/L</div><div class="v num">8.31 <small>上次</small></div></div>
-            <div class="fill-field"><div class="k">里程表 km</div><div class="v num">6186 <small>+66</small></div></div>
+            <div class="fill-field"><div class="k">里程表 km</div><div class="v num">6186 <small>+66 本箱</small></div></div>
+            <div class="fill-field"><div class="k">本次金额</div><div class="v num">≈¥99.7 <small>折算</small></div></div>
           </div>
 
           <div class="full-toggle">
@@ -165,6 +158,13 @@
               <div><div class="t1">加满油箱</div><div class="t2">未加满将不计入区间油耗</div></div>
             </div>
             <div class="switch"></div>
+          </div>
+
+          <div class="fill-row">
+            <div class="fill-field" style="flex:1">
+              <div class="k">备注</div>
+              <div class="v ph">＋ 点击添加（选填）</div>
+            </div>
           </div>
 
           <div class="keypad">
@@ -197,7 +197,7 @@
         <div class="screen-scroll" id="history-scroll">
           <div class="hist-head">
             <h2>加油记录</h2>
-            <span class="chip num">12 笔 · 4 个月</span>
+            <span class="chip num">12 笔 · 近 4 个月</span>
           </div>
           <div class="hist-summary">
             <div class="card hs"><div class="v num" id="hs-total-l">106.5L</div><div class="k">累计加油</div></div>
@@ -230,7 +230,7 @@
           </div>
 
           <div class="card chart-card">
-            <div class="ct-head"><span class="t">区间油耗趋势</span><span class="s num">均值 3.42 L/100km</span></div>
+            <div class="ct-head"><span class="t">区间油耗趋势</span><span class="s num">均值 <span id="avg-line">3.36</span> L/100km</span></div>
             <div class="chart-wrap" id="trend-chart"><!-- JS 注入 SVG --></div>
             <div class="chart-legend">
               <span><i style="background:#F59E0B"></i>区间油耗</span>
@@ -240,13 +240,8 @@
           </div>
 
           <div class="card chart-card">
-            <div class="ct-head"><span class="t">月度油费</span><span class="s num">近 4 个月</span></div>
+            <div class="ct-head"><span class="t">月度油费</span><span class="s num">按默认油价 8.31 元/L 折算</span></div>
             <div class="chart-wrap" id="month-chart"><!-- JS 注入 --></div>
-          </div>
-
-          <div class="card chart-card">
-            <div class="ct-head"><span class="t">加油站油耗对比</span><span class="s">越短越省</span></div>
-            <div id="station-chart"><!-- JS 注入 --></div>
           </div>
         </div>
         <nav class="tabbar">
@@ -255,6 +250,101 @@
           <div class="tab"><div class="tab-fab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div></div>
           <div class="tab on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>统计<i class="dot"></i></div>
           <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="3"/></svg>设置<i class="dot"></i></div>
+        </nav>
+      </div>
+    </section>
+  </div>
+  <!-- ============ P5 设置 ============ -->
+  <div class="device">
+    <div class="device-label"><span class="idx">P5</span><span class="name">设置 · 偏好与数据</span><span class="en">SETTINGS</span></div>
+    <section class="phone">
+      <div class="screen">
+        <div class="statusbar"><span class="num">21:24</span><span class="sig">▲●● ▫ 5G 87%</span></div>
+        <div class="screen-scroll">
+          <div class="stats-head">
+            <h2>设置</h2>
+          </div>
+
+          <div class="label-caps" style="display:block;margin:6px 4px 10px">我的车辆</div>
+          <div class="card fill-item" style="margin-bottom:10px">
+            <div class="vehicle-chip">
+              <div class="avatar">CF</div>
+              <div style="flex:1">
+                <div class="vname">春风 450SR</div>
+                <div class="vsub">95# 汽油 · 12 条记录</div>
+              </div>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg>
+            </div>
+          </div>
+          <div class="card" style="padding:0;margin-bottom:14px">
+            <div class="set-row">
+              <div><div class="s-t" style="color:var(--error)">删除车辆</div><div class="s-d">将同时清空该车的全部加油记录，不可恢复</div></div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14"/></svg>
+            </div>
+          </div>
+
+          <div class="label-caps" style="display:block;margin:6px 4px 10px">通用</div>
+
+          <div class="card" style="padding:0;margin-bottom:14px">
+            <div class="set-row">
+              <div><div class="s-t">常规默认油价</div><div class="s-d">所有金额按此折算，改价不影响历史记录</div></div>
+              <div class="s-v num">8.31 <small>元/L</small></div>
+            </div>
+            <div class="set-div"></div>
+            <div class="set-row">
+              <div><div class="s-t">油耗单位</div><div class="s-d">副单位始终显示换算值</div></div>
+              <div class="s-v">L/100km
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
+              </div>
+            </div>
+            <div class="set-div"></div>
+            <div class="set-row">
+              <div><div class="s-t">主题</div></div>
+              <div class="seg-mini"><span>跟随</span><span class="on">深色</span><span>浅色</span></div>
+            </div>
+          </div>
+
+          <div class="label-caps" style="display:block;margin:6px 4px 10px">数据</div>
+
+          <div class="card" style="padding:0;margin-bottom:14px">
+            <div class="set-row">
+              <div><div class="s-t">导出 CSV</div><div class="s-d">全部加油记录，含区间油耗</div></div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            </div>
+            <div class="set-div"></div>
+            <div class="set-row">
+              <div><div class="s-t">备份到文件</div><div class="s-d">最近备份：09-08 22:14</div></div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+            </div>
+            <div class="set-div"></div>
+            <div class="set-row">
+              <div><div class="s-t">从备份恢复</div><div class="s-d">覆盖当前数据，恢复前会再次确认</div></div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            </div>
+            <div class="set-div"></div>
+            <div class="set-row">
+              <div><div class="s-t" style="color:var(--error)">清空加油记录</div><div class="s-d">清空全部 12 条记录，车辆信息保留，不可恢复</div></div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14"/></svg>
+            </div>
+          </div>
+
+          <div class="card" style="padding:0;margin-bottom:14px">
+            <div class="set-row">
+              <div><div class="s-t">关于油迹</div><div class="s-d">v0.1 · 满箱法计算说明</div></div>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg>
+            </div>
+          </div>
+
+          <p style="font-size:11px;color:var(--on-surface-3);text-align:center;line-height:1.8;padding:4px 24px 0">
+            数据仅保存在本机 · 油迹 YouJi<br>摩托车油耗记录工具
+          </p>
+        </div>
+        <nav class="tabbar">
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>首页<i class="dot"></i></div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M8 6h13M8 12h13M8 18h13"/></svg>记录<i class="dot"></i></div>
+          <div class="tab"><div class="tab-fab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div></div>
+          <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>统计<i class="dot"></i></div>
+          <div class="tab on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="3"/></svg>设置<i class="dot"></i></div>
         </nav>
       </div>
     </section>

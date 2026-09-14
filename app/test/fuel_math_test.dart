@@ -34,11 +34,12 @@ void main() {
   });
 
   test('里程倒退的段被跳过', () {
-    // 排序后 1900(2) 在 2000(1) 之前：1900→2000 是合法段（100km），2000→2200 也是（200km）
+    // 按 filled_at 排序（设计文档口径）：1月1日(2000) → 1月2日(1900) 倒退被跳过；
+    // 1月2日(1900) → 1月3日(2200) 合法（300km）
     final records = [f(1, 2000, 8.0, true), f(2, 1900, 8.0, true), f(3, 2200, 8.0, true)];
     final segs = FuelMath.computeSegments(records, 8.31);
-    expect(segs.length, 2);
-    expect(segs.map((s) => s.dist).toSet(), {100, 200});
+    expect(segs.length, 1);
+    expect(segs.first.dist, 300);
   });
 
   test('尾部未加满不产生区间油耗', () {

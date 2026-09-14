@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:sqlite3/sqlite3.dart' as sqlite3;
 import 'dart:io';
 
 import 'tables.dart';
@@ -12,8 +13,8 @@ part 'database.g.dart';
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
-  /// 测试用：内存数据库
-  AppDatabase.inMemory() : super(NativeDatabase.memory());
+  /// 测试用：内存数据库（直接调 sqlite3 包，绕过平台插件，flutter test 可用）
+  AppDatabase.inMemory() : super(NativeDatabase.opened(sqlite3.sqlite3.openInMemory()));
 
   @override
   int get schemaVersion => 1;

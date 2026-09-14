@@ -25,3 +25,6 @@ temp/
 app/.dart_tool/
 app/.flutter-plugins
 app/.flutter-plugins-dependencies
+
+# 应用打包产物
+*.apk

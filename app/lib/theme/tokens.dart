@@ -48,7 +48,7 @@ class Y {
         error: error,
       ),
       fontFamily: 'MiSans',
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: surfaceContainer,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(rCard),
@@ -57,7 +57,7 @@ class Y {
         elevation: 0,
         margin: EdgeInsets.zero,
       ),
-      dialogTheme: DialogTheme(
+      dialogTheme: DialogThemeData(
         backgroundColor: surfaceContainer,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),

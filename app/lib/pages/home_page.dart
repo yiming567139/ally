@@ -7,8 +7,6 @@ import '../data/fuel_math.dart';
 import '../data/providers.dart';
 import '../theme/tokens.dart';
 import '../widgets/common.dart';
-import 'add_fillup_sheet.dart';
-import 'settings_page.dart';
 
 final _fmt = NumberFormat('#,##0.00');
 final _fmt1 = NumberFormat('#,##0.0');
@@ -66,11 +64,6 @@ class HomePage extends ConsumerWidget {
                   const Icon(Icons.keyboard_arrow_down, size: 16, color: Y.onSurface3),
                 ]),
               ),
-              const Spacer(),
-              IconButton(
-                icon: const Icon(Icons.settings_outlined, size: 20, color: Y.onSurface2),
-                onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SettingsPage())),
-              ),
             ]),
             const SizedBox(height: 14),
 
@@ -92,7 +85,7 @@ class HomePage extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                   decoration: BoxDecoration(
                     color: Y.successSoft, borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: Y.success.withOpacity(.25)),
+                    border: Border.all(color: Y.success.withValues(alpha: .25)),
                   ),
                   child: Text(
                     '${latest.l100 <= avg ? '▾' : '▴'} 最新区间 ${_fmt.format(latest.l100)} · ${latest.l100 <= avg ? '低于' : '高于'}均值 ${(100 * (latest.l100 - avg) / avg).abs().toStringAsFixed(0)}%',
@@ -113,7 +106,7 @@ class HomePage extends ConsumerWidget {
               Row(children: [
                 _stat('平均每箱', range.avg > 0 ? '${range.avg.round()}' : '—', 'km', amber: true),
                 _stat('最近一箱', range.last != null ? '${range.last!.round()}' : '—', 'km'),
-                _stat('统计样本', '${range.count}', '段'),
+                _stat('统计样本', '${range.count}', '段', last: true),
               ]),
             ])),
             const SizedBox(height: 14),
@@ -173,18 +166,12 @@ class HomePage extends ConsumerWidget {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.large(
-        backgroundColor: Y.primary, foregroundColor: Y.onPrimary,
-        onPressed: () => showAddFillUpSheet(context),
-        child: const Icon(Icons.add, size: 30),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 
-  Widget _stat(String k, String v, String unit, {bool amber = false}) {
+  Widget _stat(String k, String v, String unit, {bool amber = false, bool last = false}) {
     return Expanded(child: Container(
-      margin: const EdgeInsets.only(right: 10),
+      margin: EdgeInsets.only(right: last ? 0 : 10),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: const Color(0x8C0B0F16), border: Border.all(color: Y.outline),
@@ -214,7 +201,7 @@ class HomePage extends ConsumerWidget {
         const SizedBox(height: 12),
         ...vehicles.map((v) => ListTile(
           title: Text(v.name), subtitle: Text('${v.fuelGrade} 汽油', style: const TextStyle(color: Y.onSurface3)),
-          onTap: () { ref.read(activeVehicleIdProvider.notifier).state = v.id; Navigator.pop(c); },
+          onTap: () { setActiveVehicle(ref, v.id); Navigator.pop(c); },
         )),
         const SizedBox(height: 8),
       ])),

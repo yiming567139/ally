@@ -115,7 +115,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
             })),
       ),
       extraLinesData: avg > 0 ? ExtraLinesData(horizontalLines: [
-        HorizontalLine(y: avg, color: Y.onSurface3.withOpacity(.55), strokeWidth: 1.2, dashArray: [4, 5]),
+        HorizontalLine(y: avg, color: Y.onSurface3.withValues(alpha: .55), strokeWidth: 1.2, dashArray: [4, 5]),
       ]) : const ExtraLinesData(),
       lineTouchData: LineTouchData(touchTooltipData: LineTouchTooltipData(
         getTooltipColor: (_) => Y.surfaceHigh,
@@ -130,7 +130,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
         dotData: FlDotData(show: true, getDotPainter: (_, __, ___, i) =>
             FlDotCirclePainter(radius: i == segs.length - 1 ? 4.5 : 3, color: Y.surface, strokeColor: Y.primary, strokeWidth: 2)),
         belowBarData: BarAreaData(show: true, gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter,
-            colors: [Y.primary.withOpacity(.22), Y.primary.withOpacity(0)])),
+            colors: [Y.primary.withValues(alpha: .22), Y.primary.withValues(alpha: 0)])),
       )],
     );
   }

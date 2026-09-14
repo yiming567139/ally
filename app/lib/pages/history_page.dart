@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -7,6 +9,7 @@ import '../data/fuel_math.dart';
 import '../data/providers.dart';
 import '../theme/tokens.dart';
 import '../widgets/common.dart';
+import 'add_fillup_sheet.dart';
 
 class HistoryPage extends ConsumerWidget {
   const HistoryPage({super.key});
@@ -19,7 +22,12 @@ class HistoryPage extends ConsumerWidget {
     final ecoById = {for (final s in segs) s.to.id: s};
 
     final totalL = fills.fold(0.0, (s, f) => s + f.volumeL);
-    final totalKm = fills.length > 1 ? fills.first.odometer - fills.last.odometer : 0.0;
+    // 累计里程 = 最大里程 - 最小里程（不依赖排序，补录/同日多笔也不错算）
+    double totalKm = 0;
+    if (fills.length > 1) {
+      final odos = fills.map((f) => f.odometer);
+      totalKm = odos.reduce(math.max) - odos.reduce(math.min);
+    }
 
     return Scaffold(
       body: SafeArea(child: ListView(
@@ -58,9 +66,11 @@ class HistoryPage extends ConsumerWidget {
   }
 
   Map<String, List<FillUp>> _groups(List<FillUp> fills) {
+    final now = DateTime.now();
+    String keyOf(DateTime d) => d.year == now.year ? '${d.month} 月' : '${d.year} 年 ${d.month} 月';
     final m = <String, List<FillUp>>{};
     for (final f in fills) {
-      m.putIfAbsent('${f.filledAt.month} 月', () => []).add(f);
+      m.putIfAbsent(keyOf(f.filledAt), () => []).add(f);
     }
     return m;
   }
@@ -80,8 +90,7 @@ class HistoryPage extends ConsumerWidget {
       direction: DismissDirection.endToStart,
       background: Container(
         alignment: Alignment.centerRight, padding: const EdgeInsets.only(right: 20),
-        decoration: BoxDecoration(color: Y.errorSoft, borderRadius: BorderRadius.circular(Y.rCard)),
-        child: const Icon(Icons.delete_outline, color: Y.error),
+        decoration: BoxDecoration(color: Y.errorSoft, borderRadius: BorderRadius.circular(Y.rCard)),        child: const Icon(Icons.delete_outline, color: Y.error),
       ),
       confirmDismiss: (_) => yConfirm(context, title: '删除这条记录？', body: '${DateFormat('MM-dd HH:mm').format(r.filledAt)} · ${r.volumeL}L', danger: true),
       onDismissed: (_) async {
@@ -100,8 +109,9 @@ class HistoryPage extends ConsumerWidget {
       child: Padding(
         padding: const EdgeInsets.only(bottom: 10),
         child: YCard(
-          color: r.isFullTank ? null : Y.surfaceHigh.withOpacity(.5),
+          color: r.isFullTank ? null : Y.surfaceHigh.withValues(alpha: .5),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          onTap: () => showAddFillUpSheet(context, existing: r),
           child: Row(children: [
             SizedBox(width: 44, child: Column(children: [
               Text('${r.filledAt.day}', style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w500, fontFeatures: [FontFeature.tabularFigures()])),
@@ -133,14 +143,14 @@ class HistoryPage extends ConsumerWidget {
 
   Widget _badge(String t, Color c) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-    decoration: BoxDecoration(border: Border.all(color: c.withOpacity(.38)), borderRadius: BorderRadius.circular(5)),
+    decoration: BoxDecoration(border: Border.all(color: c.withValues(alpha: .38)), borderRadius: BorderRadius.circular(5)),
     child: Text(t, style: TextStyle(fontSize: 9.5, letterSpacing: 1.2, color: c)),
   );
 
   Widget _empty() => Padding(
     padding: const EdgeInsets.symmetric(vertical: 60),
     child: Column(children: [
-      Icon(Icons.local_gas_station_outlined, size: 44, color: Y.onSurface3.withOpacity(.5)),
+      Icon(Icons.local_gas_station_outlined, size: 44, color: Y.onSurface3.withValues(alpha: .5)),
       const SizedBox(height: 14),
       const Text('还没有加油记录', style: TextStyle(color: Y.onSurface3)),
       const SizedBox(height: 6),

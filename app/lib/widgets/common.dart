@@ -36,7 +36,7 @@ class _YPrimaryButtonState extends State<YPrimaryButton> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: (widget.danger ? Y.error : Y.primary).withOpacity(.45),
+                color: (widget.danger ? Y.error : Y.primary).withValues(alpha: .45),
                 blurRadius: 28, offset: const Offset(0, 10),
               ),
             ],

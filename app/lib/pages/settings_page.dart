@@ -1,5 +1,8 @@
-import 'package:drift/drift.dart' as drift;
+import 'dart:convert';
 import 'dart:io';
+
+import 'package:drift/drift.dart' as drift;
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
@@ -17,43 +20,34 @@ class SettingsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final price = ref.watch(defaultPriceProvider).value ?? 8.31;
     final l100 = ref.watch(unitL100Provider).value ?? true;
-    final vehicle = ref.watch(activeVehicleProvider).value;
-    final fills = ref.watch(fillUpsProvider).value ?? const <FillUp>[];
+    final themeMode = ref.watch(themeModeProvider).value ?? 'dark';
+    final vehicles = ref.watch(vehiclesProvider).value ?? const <Vehicle>[];
+    final counts = ref.watch(vehicleCountsProvider).value ?? const <int, int>{};
+    final activeId = ref.watch(activeVehicleIdProvider);
+    final totalFills = counts.values.fold(0, (a, b) => a + b);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('设置'), backgroundColor: Colors.transparent, elevation: 0),
-      body: ListView(padding: const EdgeInsets.fromLTRB(18, 0, 18, 40), children: [
+      appBar: AppBar(
+        title: const Text('设置'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+      ),
+      body: ListView(padding: const EdgeInsets.fromLTRB(18, 0, 18, 120), children: [
         const YCaps('我的车辆'),
         const SizedBox(height: 10),
-        if (vehicle != null) YCard(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-          onTap: () => _editVehicle(context, ref, vehicle),
-          child: Row(children: [
-            Container(width: 40, height: 40,
-              decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF374151), Color(0xFF1F2937)]),
-                  border: Border.all(color: Y.outlineStrong), borderRadius: BorderRadius.circular(13)),
-              alignment: Alignment.center,
-              child: Text(vehicle.name.characters.first, style: const TextStyle(color: Y.primary, fontWeight: FontWeight.w600))),
-            const SizedBox(width: 12),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(vehicle.name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-              Text('${vehicle.fuelGrade} 汽油 · ${fills.length} 条记录', style: const TextStyle(fontSize: 11, color: Y.onSurface3)),
-            ])),
-            const Icon(Icons.chevron_right, size: 15, color: Y.onSurface3),
-          ]),
-        ),
-        const SizedBox(height: 8),
+        ...vehicles.map((v) {
+          final isActive = (activeId ?? (vehicles.isNotEmpty ? vehicles.first.id : -1)) == v.id;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _vehicleCard(context, ref, v, counts[v.id] ?? 0, isActive),
+          );
+        }),
         TextButton.icon(
           onPressed: () => _editVehicle(context, ref, null),
           icon: const Icon(Icons.add, size: 16, color: Y.primary),
           label: const Text('添加车辆', style: TextStyle(color: Y.primary)),
         ),
-        if (vehicle != null)
-          TextButton.icon(
-            onPressed: () => _deleteVehicle(context, ref, vehicle, fills.length),
-            icon: const Icon(Icons.delete_outline, size: 16, color: Y.error),
-            label: const Text('删除车辆（同时清空该车记录）', style: TextStyle(color: Y.error, fontSize: 13)),
-          ),
         const SizedBox(height: 18),
 
         const YCaps('通用'),
@@ -69,8 +63,13 @@ class SettingsPage extends ConsumerWidget {
             ref.invalidate(unitL100Provider);
           })),
           const Divider(height: 1, indent: 16, color: Y.outline),
-          _row('主题', '', trailing: _seg(['跟随', '深色', '浅色'], 1, (_) {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('浅色主题二期提供，当前为深色优先设计')));
+          _row('主题', '', trailing: _seg(['跟随', '深色', '浅色'], themeMode == 'system' ? 0 : 1, (i) async {
+            if (i == 2) {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('浅色主题二期提供，当前为深色优先设计')));
+              return;
+            }
+            await ref.read(dbProvider).setSetting('theme_mode', i == 0 ? 'system' : 'dark');
+            ref.invalidate(themeModeProvider);
           })),
         ])),
         const SizedBox(height: 18),
@@ -81,9 +80,15 @@ class SettingsPage extends ConsumerWidget {
           _row('导出 CSV', '全部加油记录，含区间油耗', trailing: const Icon(Icons.download, size: 16, color: Y.onSurface3),
               onTap: () => _exportCsv(context, ref)),
           const Divider(height: 1, indent: 16, color: Y.outline),
-          _row('清空加油记录', '清空全部 ${fills.length} 条记录，车辆信息保留，不可恢复', danger: true,
+          _row('备份到文件', '车辆 / 记录 / 设置导出为 JSON，换机可恢复', trailing: const Icon(Icons.save_outlined, size: 16, color: Y.onSurface3),
+              onTap: () => _backup(context, ref)),
+          const Divider(height: 1, indent: 16, color: Y.outline),
+          _row('从备份恢复', '覆盖当前数据，恢复前会再次确认', trailing: const Icon(Icons.restore, size: 16, color: Y.onSurface3),
+              onTap: () => _restore(context, ref)),
+          const Divider(height: 1, indent: 16, color: Y.outline),
+          _row('清空加油记录', '清空全部 $totalFills 条记录，车辆信息保留，不可恢复', danger: true,
               trailing: const Icon(Icons.delete_outline, size: 16, color: Y.error),
-              onTap: () => _clearRecords(context, ref, fills.length)),
+              onTap: () => _clearRecords(context, ref, totalFills)),
         ])),
         const SizedBox(height: 18),
 
@@ -92,6 +97,46 @@ class SettingsPage extends ConsumerWidget {
                 children: [const Text('满箱法：仅「加满 → 加满」区间计算油耗，未加满记录不计边界。')]))),
         const SizedBox(height: 20),
         const Center(child: Text('数据仅保存在本机 · 油迹 YouJi', style: TextStyle(fontSize: 11, color: Y.onSurface3, height: 1.8))),
+      ]),
+    );
+  }
+
+  // ---------- 车辆卡片 ----------
+  Widget _vehicleCard(BuildContext context, WidgetRef ref, Vehicle v, int count, bool isActive) {
+    return YCard(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      onTap: () => setActiveVehicle(ref, v.id),
+      child: Row(children: [
+        Container(width: 40, height: 40,
+          decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF374151), Color(0xFF1F2937)]),
+              border: Border.all(color: isActive ? Y.primaryLine : Y.outlineStrong), borderRadius: BorderRadius.circular(13)),
+          alignment: Alignment.center,
+          child: Text(v.name.characters.first, style: const TextStyle(color: Y.primary, fontWeight: FontWeight.w600))),
+        const SizedBox(width: 12),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Flexible(child: Text(v.name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis)),
+            if (isActive) ...[
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                decoration: BoxDecoration(color: Y.primarySoft, border: Border.all(color: Y.primaryLine), borderRadius: BorderRadius.circular(5)),
+                child: const Text('当前', style: TextStyle(fontSize: 9.5, letterSpacing: 1, color: Y.primary)),
+              ),
+            ],
+          ]),
+          Text('${v.fuelGrade} 汽油 · $count 条记录', style: const TextStyle(fontSize: 11, color: Y.onSurface3)),
+        ])),
+        IconButton(
+          icon: const Icon(Icons.edit_outlined, size: 16, color: Y.onSurface3),
+          tooltip: '编辑',
+          onPressed: () => _editVehicle(context, ref, v),
+        ),
+        IconButton(
+          icon: const Icon(Icons.delete_outline, size: 16, color: Y.error),
+          tooltip: '删除车辆',
+          onPressed: () => _deleteVehicle(context, ref, v, count),
+        ),
       ]),
     );
   }
@@ -124,6 +169,7 @@ class SettingsPage extends ConsumerWidget {
     );
   }
 
+  // ---------- 车辆增改删 ----------
   Future<void> _editVehicle(BuildContext context, WidgetRef ref, Vehicle? v) async {
     final nameCtrl = TextEditingController(text: v?.name);
     String grade = v?.fuelGrade ?? '95#';
@@ -149,23 +195,27 @@ class SettingsPage extends ConsumerWidget {
       final db = ref.read(dbProvider);
       if (v == null) {
         final id = await db.addVehicle(nameCtrl.text.trim(), grade);
-        ref.read(activeVehicleIdProvider.notifier).state = id;
+        await setActiveVehicle(ref, id);
       } else {
         await (db.update(db.vehicles)..where((x) => x.id.equals(v.id))).write(
             VehiclesCompanion(name: drift.Value(nameCtrl.text.trim()), fuelGrade: drift.Value(grade)));
       }
+      ref.invalidate(vehicleCountsProvider);
     }
   }
 
   Future<void> _deleteVehicle(BuildContext context, WidgetRef ref, Vehicle v, int count) async {
     final ok = await yConfirm(context, title: '删除「${v.name}」？',
-        body: '将同时清空该车的 $count 条加油记录，不可恢复。建议先到「数据 → 导出 CSV」备份。', danger: true);
+        body: '将同时清空该车的 $count 条加油记录，不可恢复。建议先到「数据 → 备份到文件」备份。', danger: true);
     if (ok) {
+      final activeId = ref.read(activeVehicleIdProvider);
       await ref.read(dbProvider).deleteVehicle(v.id);
-      ref.read(activeVehicleIdProvider.notifier).state = null;
+      if (activeId == v.id) await clearActiveVehicle(ref);
+      ref.invalidate(vehicleCountsProvider);
     }
   }
 
+  // ---------- 通用 ----------
   Future<void> _editPrice(BuildContext context, WidgetRef ref, double cur) async {
     final ctrl = TextEditingController(text: cur.toStringAsFixed(2));
     final ok = await showDialog<bool>(context: context, builder: (c) => AlertDialog(
@@ -188,6 +238,7 @@ class SettingsPage extends ConsumerWidget {
     }
   }
 
+  // ---------- 数据 ----------
   Future<void> _exportCsv(BuildContext context, WidgetRef ref) async {
     final db = ref.read(dbProvider);
     final vehicles = await db.select(db.vehicles).get();
@@ -204,11 +255,60 @@ class SettingsPage extends ConsumerWidget {
     await Share.shareXFiles([XFile(file.path)], subject: '油迹 · 加油记录导出');
   }
 
+  Future<void> _backup(BuildContext context, WidgetRef ref) async {
+    final j = await ref.read(dbProvider).exportAll();
+    final dir = await getTemporaryDirectory();
+    final file = File('${dir.path}/youji-backup-${DateTime.now().millisecondsSinceEpoch}.json');
+    await file.writeAsString(const JsonEncoder.withIndent('  ').convert(j));
+    await Share.shareXFiles([XFile(file.path)], subject: '油迹 · 数据备份');
+  }
+
+  Future<void> _restore(BuildContext context, WidgetRef ref) async {
+    final res = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['json']);
+    final path = res?.files.single.path;
+    if (path == null) return;
+    Map<String, dynamic> j;
+    try {
+      j = jsonDecode(await File(path).readAsString()) as Map<String, dynamic>;
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('恢复失败：无法读取该文件')));
+      }
+      return;
+    }
+    if (!context.mounted) return;
+    final ok = await yConfirm(context, title: '从备份恢复？',
+        body: '将覆盖当前全部数据（车辆、加油记录、设置），不可恢复。', danger: true);
+    if (!ok) return;
+    try {
+      await ref.read(dbProvider).importAll(j);
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('恢复失败：不是有效的油迹备份文件')));
+      }
+      return;
+    }
+    // 恢复持久化的当前车辆，并刷新全部数据 provider
+    final saved = await ref.read(dbProvider).getSetting('active_vehicle_id');
+    ref.read(activeVehicleIdProvider.notifier).state = saved == null ? null : int.tryParse(saved);
+    ref.invalidate(vehiclesProvider);
+    ref.invalidate(activeVehicleProvider);
+    ref.invalidate(fillUpsProvider);
+    ref.invalidate(vehicleCountsProvider);
+    ref.invalidate(defaultPriceProvider);
+    ref.invalidate(unitL100Provider);
+    ref.invalidate(themeModeProvider);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('已从备份恢复')));
+    }
+  }
+
   Future<void> _clearRecords(BuildContext context, WidgetRef ref, int count) async {
     final ok = await yConfirm(context, title: '清空加油记录？',
         body: '将清空全部 $count 条加油记录（所有车辆），车辆信息保留，不可恢复。建议先备份。', danger: true);
     if (ok) {
       await ref.read(dbProvider).clearAllFillUps();
+      ref.invalidate(vehicleCountsProvider);
       if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('已清空加油记录')));
     }
   }

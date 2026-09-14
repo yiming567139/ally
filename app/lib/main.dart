@@ -6,6 +6,7 @@ import 'theme/tokens.dart';
 import 'pages/home_page.dart';
 import 'pages/history_page.dart';
 import 'pages/stats_page.dart';
+import 'pages/settings_page.dart';
 import 'pages/add_fillup_sheet.dart';
 
 void main() {
@@ -35,30 +36,47 @@ class _ShellState extends ConsumerState<_Shell> {
   int _tab = 0;
 
   @override
+  void initState() {
+    super.initState();
+    _restoreActiveVehicle();
+  }
+
+  /// 启动时从设置表恢复上次选择的车辆
+  Future<void> _restoreActiveVehicle() async {
+    final saved = await ref.read(dbProvider).getSetting('active_vehicle_id');
+    final id = saved == null ? null : int.tryParse(saved);
+    if (id != null && mounted) {
+      ref.read(activeVehicleIdProvider.notifier).state = id;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final vehicles = ref.watch(vehiclesProvider).value ?? [];
     if (vehicles.isEmpty) return const _Onboarding();
 
-    final pages = [const HomePage(), const HistoryPage(), const StatsPage()];
+    final pages = [const HomePage(), const HistoryPage(), const StatsPage(), const SettingsPage()];
     return Scaffold(
       body: IndexedStack(index: _tab, children: pages),
       bottomNavigationBar: NavigationBar(
-        backgroundColor: Y.surfaceApp.withOpacity(.92),
+        backgroundColor: Y.surfaceApp.withValues(alpha: .92),
         selectedIndex: _tab,
         onDestinationSelected: (i) => setState(() => _tab = i),
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home, color: Y.primary), label: '首页'),
           NavigationDestination(icon: Icon(Icons.list_alt), selectedIcon: Icon(Icons.list, color: Y.primary), label: '记录'),
           NavigationDestination(icon: Icon(Icons.show_chart), selectedIcon: Icon(Icons.show_chart, color: Y.primary), label: '统计'),
+          NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings, color: Y.primary), label: '设置'),
         ],
       ),
+      // 唯一录入入口：底部导航中央「＋」
       floatingActionButton: FloatingActionButton(
         backgroundColor: Y.primary, foregroundColor: Y.onPrimary, elevation: 6,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         onPressed: () => showAddFillUpSheet(context),
         child: const Icon(Icons.add, size: 28),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 }
@@ -130,7 +148,7 @@ class _AddFirstVehicleButtonState extends ConsumerState<_AddFirstVehicleButton> 
         )));
         if (ok == true) {
           final id = await ref.read(dbProvider).addVehicle(nameCtrl.text.trim(), grade);
-          ref.read(activeVehicleIdProvider.notifier).state = id;
+          await setActiveVehicle(ref, id);
         }
       },
     );

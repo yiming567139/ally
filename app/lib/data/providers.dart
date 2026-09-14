@@ -39,3 +39,27 @@ final unitL100Provider = StreamProvider<bool>((ref) async* {
   final db = ref.watch(dbProvider);
   yield (await db.getSetting('unit_l100')) != '0'; // 默认 L/100km
 });
+
+/// 主题偏好（当前仅深色实现，浅色二期提供）
+final themeModeProvider = StreamProvider<String>((ref) async* {
+  yield await ref.watch(dbProvider).getSetting('theme_mode') ?? 'dark';
+});
+
+/// 每辆车的记录条数
+final vehicleCountsProvider = FutureProvider<Map<int, int>>((ref) async {
+  ref.watch(vehiclesProvider);
+  ref.watch(fillUpsProvider);
+  return ref.read(dbProvider).vehicleFillCounts();
+});
+
+/// 切换当前车辆并持久化到设置表
+Future<void> setActiveVehicle(WidgetRef ref, int id) async {
+  ref.read(activeVehicleIdProvider.notifier).state = id;
+  await ref.read(dbProvider).setSetting('active_vehicle_id', '$id');
+}
+
+/// 清除当前车辆选择（删车时调用）
+Future<void> clearActiveVehicle(WidgetRef ref) async {
+  ref.read(activeVehicleIdProvider.notifier).state = null;
+  await ref.read(dbProvider).setSetting('active_vehicle_id', '');
+}

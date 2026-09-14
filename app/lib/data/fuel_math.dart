@@ -18,9 +18,12 @@ class Segment {
 }
 
 class FuelMath {
-  /// 计算（records 需含全部历史，内部按里程排序；isFullTank 为锚点）
+  /// 计算（records 需含全部历史；按设计文档以 filled_at 排序，里程作平局兜底）
   static List<Segment> computeSegments(List<FillUp> records, double defaultPrice) {
-    final asc = [...records]..sort((a, b) => a.odometer.compareTo(b.odometer));
+    final asc = [...records]..sort((a, b) {
+      final t = a.filledAt.compareTo(b.filledAt);
+      return t != 0 ? t : a.odometer.compareTo(b.odometer);
+    });
     final out = <Segment>[];
     for (var i = 1; i < asc.length; i++) {
       final b = asc[i];

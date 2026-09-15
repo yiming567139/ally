@@ -5,6 +5,7 @@ import 'package:drift/drift.dart' as drift;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -92,11 +93,16 @@ class SettingsPage extends ConsumerWidget {
         ])),
         const SizedBox(height: 18),
 
-        YCard(padding: EdgeInsets.zero, child: _row('关于油迹', 'v0.1 · 满箱法计算说明', trailing: const Icon(Icons.chevron_right, size: 15, color: Y.onSurface3),
-            onTap: () => showAboutDialog(context: context, applicationName: '油迹 YouJi', applicationVersion: '0.1.0',
-                children: [const Text('满箱法：仅「加满 → 加满」区间计算油耗，未加满记录不计边界。')]))),
+        YCard(padding: EdgeInsets.zero, child: _row('关于油迹', '满箱法计算说明', trailing: const Icon(Icons.chevron_right, size: 15, color: Y.onSurface3),
+            onTap: () => _showAbout(context))),
         const SizedBox(height: 20),
-        const Center(child: Text('数据仅保存在本机 · 油迹 YouJi', style: TextStyle(fontSize: 11, color: Y.onSurface3, height: 1.8))),
+        FutureBuilder<PackageInfo>(
+          future: PackageInfo.fromPlatform(),
+          builder: (c, snap) => Center(child: Text(
+            snap.hasData ? '油迹 YouJi v${snap.data!.version} · 数据仅保存在本机' : '数据仅保存在本机 · 油迹 YouJi',
+            style: const TextStyle(fontSize: 11, color: Y.onSurface3, height: 1.8),
+          )),
+        ),
       ]),
     );
   }
@@ -303,8 +309,19 @@ class SettingsPage extends ConsumerWidget {
     }
   }
 
-  Future<void> _clearRecords(BuildContext context, WidgetRef ref, int count) async {
-    final ok = await yConfirm(context, title: '清空加油记录？',
+  /// 关于弹窗：版本号自动读自 pubspec，无需手动维护
+  Future<void> _showAbout(BuildContext context) async {
+    final info = await PackageInfo.fromPlatform();
+    if (!context.mounted) return;
+    showAboutDialog(
+      context: context,
+      applicationName: '油迹 YouJi',
+      applicationVersion: '${info.version}+${info.buildNumber}',
+      children: [const Text('满箱法：仅「加满 → 加满」区间计算油耗，未加满记录不计边界。')],
+    );
+  }
+
+  Future<void> _clearRecords(BuildContext context, WidgetRef ref, int count) async {    final ok = await yConfirm(context, title: '清空加油记录？',
         body: '将清空全部 $count 条加油记录（所有车辆），车辆信息保留，不可恢复。建议先备份。', danger: true);
     if (ok) {
       await ref.read(dbProvider).clearAllFillUps();

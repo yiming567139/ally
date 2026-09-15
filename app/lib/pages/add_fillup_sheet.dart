@@ -210,9 +210,11 @@ class _AddFillUpSheetState extends ConsumerState<AddFillUpSheet> {
 
   Future<void> _pickTime() async {
     final d = await showDatePicker(context: context, initialDate: _time, firstDate: DateTime(2020), lastDate: DateTime.now());
-    if (d == null) return;
+    if (d == null || !mounted) return;
     final t = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(_time));
-    setState(() => _time = DateTime(d.year, d.month, d.day, t?.hour ?? _time.hour, t?.minute ?? _time.minute));
+    if (t != null && mounted) {
+      setState(() => _time = DateTime(d.year, d.month, d.day, t.hour, t.minute));
+    }
   }
 
   /// 最近一次加满锚点的里程（编辑时排除自身）
@@ -232,7 +234,9 @@ class _AddFillUpSheetState extends ConsumerState<AddFillUpSheet> {
   Future<void> _save(Vehicle v, double vol) async {
     final db = ref.read(dbProvider);
     final note = _noteCtrl.text.trim();
-    final odo = double.parse(_odoCtrl.text);
+    // 兜底：canSave 检查后输入理论上不会变，但 tryParse 防极端竞态崩溃
+    final odo = double.tryParse(_odoCtrl.text);
+    if (odo == null || odo < 0) return;
     if (widget.existing != null) {
       await (db.update(db.fillUps)..where((f) => f.id.equals(widget.existing!.id))).write(FillUpsCompanion(
         filledAt: drift.Value(_time),

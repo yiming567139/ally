@@ -30,11 +30,16 @@ class AppDatabase extends _$AppDatabase {
   // ---------- 车辆 ----------
   Stream<List<Vehicle>> watchVehicles() =>
       (select(vehicles)..orderBy([(u) => OrderingTerm.asc(u.id)])).watch();
-  Stream<Vehicle?> watchActiveVehicle(int? id) {
-    final q = select(vehicles)..orderBy([(v) => OrderingTerm.asc(v.id)]);
-    if (id != null) q.where((v) => v.id.equals(id));
-    q.limit(1);
-    return q.watchSingleOrNull();
+  Stream<Vehicle?> watchActiveVehicle(int? id) async* {
+    if (id != null) {
+      final target = await (select(vehicles)..where((v) => v.id.equals(id))).getSingleOrNull();
+      if (target != null) {
+        yield* (select(vehicles)..where((v) => v.id.equals(id))).watchSingleOrNull();
+        return;
+      }
+      // id 悬空（车辆已删除 / 备份恢复后不一致）→ 兜底第一辆
+    }
+    yield* (select(vehicles)..orderBy([(v) => OrderingTerm.asc(v.id)])..limit(1)).watchSingleOrNull();
   }
   Future<int> addVehicle(String name, String fuelGrade) =>
       into(vehicles).insert(VehiclesCompanion.insert(name: name, fuelGrade: fuelGrade));
@@ -46,6 +51,9 @@ class AppDatabase extends _$AppDatabase {
       (select(fillUps)..where((f) => f.vehicleId.equals(vehicleId))
         ..orderBy([(f) => OrderingTerm.desc(f.filledAt)])).watch();
   Future<int> addFillUp(FillUpsCompanion entry) => into(fillUps).insert(entry);
+  /// 撤销删除用：保留原 id，冲突时替换（不会因 id 被占而静默失败）
+  Future<void> restoreFillUp(FillUpsCompanion entry) =>
+      into(fillUps).insert(entry, mode: InsertMode.insertOrReplace);
   Future<void> deleteFillUp(int id) =>
       (delete(fillUps)..where((f) => f.id.equals(id))).go();
   Future<int> clearAllFillUps() => delete(fillUps).go(); // 保留车辆
@@ -102,6 +110,14 @@ class AppDatabase extends _$AppDatabase {
     final vs = (j['vehicles'] as List).cast<Map<String, dynamic>>();
     final fs = (j['fillUps'] as List).cast<Map<String, dynamic>>();
     final ss = ((j['settings'] as List?) ?? const []).cast<Map<String, dynamic>>();
+    // 外键完整性校验：fillUps.vehicleId 必须都在 vehicles 里，否则导入后产生孤儿记录
+    final vIds = vs.map((v) => v['id']).whereType<int>().toSet();
+    for (final f in fs) {
+      final vid = f['vehicleId'];
+      if (vid is! int || !vIds.contains(vid)) {
+        throw const FormatException('备份文件数据不一致：存在指向不存在车辆的加油记录');
+      }
+    }
     await transaction(() async {
       await delete(fillUps).go();
       await delete(vehicles).go();
@@ -146,4 +162,7 @@ class AppDatabase extends _$AppDatabase {
   }
   Future<void> setSetting(String key, String value) =>
       into(settings).insertOnConflictUpdate(Setting(key: key, value: value));
+  /// 响应式设置项：数据变化时自动发射，无需手动 invalidate
+  Stream<String?> watchSetting(String key) =>
+      (select(settings)..where((s) => s.key.equals(key))).watchSingleOrNull().map((r) => r?.value);
 }

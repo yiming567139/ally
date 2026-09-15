@@ -47,6 +47,26 @@ class FuelMath {
     return out.reversed.toList(); // 新 → 旧
   }
 
+  /// 统计因里程倒退/相等而被跳过的锚点段数量（这些记录的油量未参与任何计算）
+  static int countMileageAnomalies(List<FillUp> records) {
+    final asc = [...records]..sort((a, b) {
+      final t = a.filledAt.compareTo(b.filledAt);
+      return t != 0 ? t : a.odometer.compareTo(b.odometer);
+    });
+    var n = 0;
+    for (var i = 1; i < asc.length; i++) {
+      final b = asc[i];
+      if (!b.isFullTank) continue;
+      var j = i - 1;
+      while (j >= 0 && !asc[j].isFullTank) {
+        j--;
+      }
+      if (j < 0) continue;
+      if (b.odometer - asc[j].odometer <= 0) n++;
+    }
+    return n;
+  }
+
   /// 平均油耗 = 锚点后总油量 / 总里程 × 100
   static double avgL100(List<Segment> segs) {
     if (segs.isEmpty) return 0;

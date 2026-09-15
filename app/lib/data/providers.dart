@@ -28,21 +28,20 @@ final fillUpsProvider = StreamProvider<List<FillUp>>((ref) {
   return ref.watch(dbProvider).watchFillUps(v.id);
 });
 
-/// 设置项
-final defaultPriceProvider = StreamProvider<double>((ref) async* {
-  final db = ref.watch(dbProvider);
-  yield (await db.getSetting('default_price_per_l')) != null
-      ? double.parse((await db.getSetting('default_price_per_l'))!)
-      : 8.31;
+/// 设置项（drift watch 流，改设置后 UI 自动刷新，无需手动 invalidate）
+final defaultPriceProvider = StreamProvider<double>((ref) {
+  return ref.watch(dbProvider).watchSetting('default_price_per_l')
+      .map((v) => v != null ? (double.tryParse(v) ?? 8.31) : 8.31);
 });
-final unitL100Provider = StreamProvider<bool>((ref) async* {
-  final db = ref.watch(dbProvider);
-  yield (await db.getSetting('unit_l100')) != '0'; // 默认 L/100km
+final unitL100Provider = StreamProvider<bool>((ref) {
+  return ref.watch(dbProvider).watchSetting('unit_l100')
+      .map((v) => v != '0'); // 默认 L/100km
 });
 
 /// 主题偏好（当前仅深色实现，浅色二期提供）
-final themeModeProvider = StreamProvider<String>((ref) async* {
-  yield await ref.watch(dbProvider).getSetting('theme_mode') ?? 'dark';
+final themeModeProvider = StreamProvider<String>((ref) {
+  return ref.watch(dbProvider).watchSetting('theme_mode')
+      .map((v) => v ?? 'dark');
 });
 
 /// 每辆车的记录条数

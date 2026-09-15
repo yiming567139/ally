@@ -28,6 +28,8 @@ class HistoryPage extends ConsumerWidget {
       final odos = fills.map((f) => f.odometer);
       totalKm = odos.reduce(math.max) - odos.reduce(math.min);
     }
+    // 里程倒退/相等的异常段：被跳过不计入油耗，需要让用户知道
+    final anomalies = FuelMath.countMileageAnomalies(fills);
 
     return Scaffold(
       body: SafeArea(child: ListView(
@@ -47,6 +49,25 @@ class HistoryPage extends ConsumerWidget {
             _sum('¥${(totalL * price).round()}', '累计花费'),
             _sum(totalKm > 0 ? '${totalKm.round()}' : '—', '累计里程km'),
           ]),
+          if (anomalies > 0) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0x1FFBBF24),
+                border: Border.all(color: const Color(0x47FBBF24)),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(children: [
+                const Icon(Icons.warning_amber_rounded, size: 16, color: Color(0xFFFBBF24)),
+                const SizedBox(width: 8),
+                Expanded(child: Text(
+                  '有 $anomalies 段记录因里程倒退/相等未参与油耗计算，请检查对应记录的里程读数（点击记录可编辑）',
+                  style: const TextStyle(fontSize: 11.5, color: Color(0xFFFBBF24), height: 1.4),
+                )),
+              ]),
+            ),
+          ],
           const SizedBox(height: 10),
           ..._groups(fills).entries.map((e) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Padding(
@@ -100,8 +121,8 @@ class HistoryPage extends ConsumerWidget {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: const Text('已删除'),
             action: SnackBarAction(label: '撤销', onPressed: () async {
-              // 撤销=重新插入（id 自增即可，顺序由里程决定）
-              await db.addFillUp(r.toCompanion(true));
+              // 撤销=按原 id 恢复，冲突时替换（不会因 id 被占而静默失败）
+              await db.restoreFillUp(r.toCompanion(true));
             }),
           ));
         }
